@@ -131,7 +131,12 @@ function parseInstallment(description: string): Installment | null {
   return number >= 1 && number <= total ? { number, total } : null;
 }
 
-function extractMerchant(kind: TransactionKind, description: string, installment: Installment | null): string | null {
+/** The normalized merchant of a transaction, from its description. Null when it has none. */
+export function merchantFromDescription(
+  kind: TransactionKind,
+  description: string,
+  installment: Installment | null,
+): string | null {
   switch (kind) {
     case "PIX_SENT":
     case "PIX_RECEIVED": {
@@ -187,7 +192,7 @@ function parseTransaction(node: OfxNode, position: number, source: Source): Pars
   const description = child(node, "MEMO")?.value ?? "";
   const kind = classify(source, description, amountCents);
   const installment = kind === "CARD_PURCHASE" ? parseInstallment(description) : null;
-  const merchant = extractMerchant(kind, description, installment);
+  const merchant = merchantFromDescription(kind, description, installment);
   const externalId = buildExternalId(fitId, source, description, installment);
   return { externalId, date, amountCents, description, kind, merchant, installment };
 }

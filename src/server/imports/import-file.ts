@@ -4,6 +4,7 @@ import { decodeOfx, OfxParseError, parseNubankOfx, type ParsedStatement, type So
 import { applyRules } from "../categorization/apply-rules";
 import type { PrismaClient } from "../prisma";
 import { importStatement } from "./import-statement";
+import { repairEncoding } from "./repair-encoding";
 
 export interface ImportFileResult {
   fileName: string;
@@ -42,7 +43,9 @@ export async function importFile(
 
   const fileHash = createHash("sha256").update(file.bytes).digest("hex");
   const result = await importStatement(db, { statement, fileName: file.name, fileHash });
-  // Also after a repeated file: rules may have changed since the transactions were stored.
+  // Both also run after a repeated file: they bring what is already stored up to date
+  // with fixes to the reader and with the current rules.
+  await repairEncoding(db);
   await applyRules(db);
 
   return {

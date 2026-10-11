@@ -1,6 +1,8 @@
 export { decodeOfx } from "./decode-ofx";
+export { repairMojibake } from "./mojibake";
 export {
   isInternalTransfer,
+  merchantFromDescription,
   OfxParseError,
   parseNubankOfx,
   type Installment,

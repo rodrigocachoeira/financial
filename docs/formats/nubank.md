@@ -18,10 +18,12 @@ OFX 1.02 em SGML: cabeçalho `CHAVE:VALOR`, depois tags. Uma tag por linha, queb
 | Item | Conta | Cartão |
 |---|---|---|
 | Cabeçalho `ENCODING` / `CHARSET` | `UTF-8` / `NONE` | `USASCII` / `1252` |
-| Acentos no `MEMO` | sim | não observados |
+| Acentos no `MEMO` | sim | sim, **em UTF-8**, apesar do cabeçalho |
 | Bloco de mensagens | `BANKMSGSRSV1 > STMTTRNRS > STMTRS` | `CREDITCARDMSGSRSV1 > CCSTMTTRNRS > CCSTMTRS` |
 | Identificação | `BANKACCTFROM` (`BANKID`, `BRANCHID`, `ACCTID`, `ACCTTYPE=CHECKING`) | `CCACCTFROM` (`ACCTID` em formato UUID) |
 | Extras | `LEDGERBAL` e `BALLIST` com `RENDIMENTO LIQUIDO` | `LEDGERBAL` |
+
+**O cabeçalho do cartão está errado.** Ele declara `USASCII` e `1252`, mas os bytes são UTF-8 (verificado em 2026-10-11 em três faturas reais). O leitor não confia no cabeçalho: tenta UTF-8 e só cai em windows-1252 se os bytes não forem UTF-8 válido. Antes dessa correção, "Ajuste a crédito" era gravado como "Ajuste a crÃ©dito"; `repairEncoding`, que roda a cada importação, conserta o que já estava gravado.
 
 Campos comuns:
 

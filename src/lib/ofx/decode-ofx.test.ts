@@ -19,12 +19,17 @@ describe("decodeOfx", () => {
     expect(decodeOfx(bytes)).toContain("Padaria São João – Café");
   });
 
+  it("reads UTF-8 even when the header declares windows-1252, as Nubank card statements do", () => {
+    const bytes = Buffer.from(`${WINDOWS_1252_HEADER}<MEMO>Ajuste a crédito</MEMO>`, "utf8");
+    expect(decodeOfx(bytes)).toContain("<MEMO>Ajuste a crédito</MEMO>");
+  });
+
   it("strips a UTF-8 byte order mark", () => {
     const bytes = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from("OFXHEADER:100\nENCODING:UTF-8\n")]);
     expect(decodeOfx(bytes).startsWith("OFXHEADER")).toBe(true);
   });
 
-  it("falls back to UTF-8 when the header declares no encoding", () => {
+  it("reads UTF-8 when the header declares no encoding", () => {
     expect(decodeOfx(Buffer.from("<MEMO>Café</MEMO>", "utf8"))).toBe("<MEMO>Café</MEMO>");
   });
 });

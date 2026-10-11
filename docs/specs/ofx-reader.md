@@ -12,7 +12,7 @@ Transformar o conteúdo de um arquivo OFX exportado pelo Nubank (conta ou cartã
 Código em `src/lib/ofx/`.
 
 ```ts
-/** Decodifica os bytes do arquivo conforme o cabeçalho (UTF-8 ou windows-1252). */
+/** Decodifica os bytes do arquivo: UTF-8 quando válido, senão windows-1252. O cabeçalho não é confiável (corrigido em 2026-10-11). */
 function decodeOfx(bytes: Uint8Array): string;
 
 /** Interpreta o texto de um OFX do Nubank. Lança OfxParseError se o arquivo for inválido. */

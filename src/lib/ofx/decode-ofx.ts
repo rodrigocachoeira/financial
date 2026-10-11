@@ -1,10 +1,15 @@
-const HEADER_BYTES = 512;
+const UTF8_STRICT = new TextDecoder("utf-8", { fatal: true });
+const WINDOWS_1252 = new TextDecoder("windows-1252");
 
-/** Decodes OFX file bytes according to its header (UTF-8 or windows-1252). */
+/**
+ * Decodes OFX file bytes. The header is not trusted: Nubank's card statements declare
+ * `ENCODING:USASCII` and `CHARSET:1252` while carrying UTF-8. Text with accents is practically
+ * never valid UTF-8 by accident, so UTF-8 is tried first and windows-1252 is the fallback.
+ */
 export function decodeOfx(bytes: Uint8Array): string {
-  const header = new TextDecoder("latin1").decode(bytes.subarray(0, HEADER_BYTES));
-  const isUtf8 = /^ENCODING:\s*(?:UTF-8|UNICODE)\s*$/m.test(header);
-  const isWindows1252 = /^CHARSET:\s*1252\s*$/m.test(header);
-  const encoding = !isUtf8 && isWindows1252 ? "windows-1252" : "utf-8";
-  return new TextDecoder(encoding).decode(bytes);
+  try {
+    return UTF8_STRICT.decode(bytes);
+  } catch {
+    return WINDOWS_1252.decode(bytes);
+  }
 }
