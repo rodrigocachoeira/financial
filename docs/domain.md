@@ -12,6 +12,7 @@ Glossário e regras de negócio. Termos em inglês são os nomes usados no códi
 | Estabelecimento | `Merchant` | Quem recebeu ou enviou o dinheiro, já normalizado |
 | Categoria | `Category` | Classificação do gasto (Alimentação, Transporte, ...) |
 | Regra | `CategoryRule` | Trecho de texto que sugere uma categoria para estabelecimentos ainda sem categoria |
+| Limite | `Budget` | Valor mensal planejado para uma categoria, válido a partir de um mês |
 | Parcela | `Installment` | Posição `n/total` de uma compra parcelada no cartão |
 | Fatura | `Statement` | Conjunto de lançamentos do cartão em um ciclo de cobrança |
 
@@ -55,6 +56,14 @@ Glossário e regras de negócio. Termos em inglês são os nomes usados no códi
 ### Comparação com a média
 
 - Uma categoria é comparada com a média dos três meses anteriores que tenham algum gasto. Está fora do padrão quando supera a média em R$ 50 ou mais e em pelo menos 25%.
+
+### Orçamento
+
+- Um limite é um valor mensal de gasto para uma categoria, com vigência a partir de um mês. O limite de um mês é o da vigência mais recente que não passe dele; mudar o limite não reavalia os meses anteriores.
+- O gasto medido contra o limite é o mesmo dos relatórios: parcelas do mês contam e estornos abatem.
+- O andamento do mês é medido até o lançamento mais recente importado, não até o dia de hoje. Só o mês-calendário atual, no fuso de São Paulo, tem ritmo.
+- Situações: estourou (gasto acima do limite); atenção (pelo menos metade do limite usada e mais de 15 pontos percentuais acima do andamento do mês); no ritmo (o resto).
+- A sobra de um mês não passa para o seguinte. Categorias que não contam como gasto não têm limite.
 
 ### Parcelas
 

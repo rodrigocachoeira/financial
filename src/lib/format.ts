@@ -70,3 +70,16 @@ export function formatPercent(fraction: number): string {
 export function formatShortMonth(month: string): string {
   return shortMonth.format(new Date(`${month}-01T00:00:00.000Z`)).replace(".", "");
 }
+
+/**
+ * Reads an amount typed by a person in Brazilian format: "800", "1.200", "1.200,50", "R$ 45,9".
+ * Returns cents, or null when the text is not an amount.
+ */
+export function parseReais(text: string): number | null {
+  const cleaned = text.replace(/R\$/i, "").replace(/\s/g, "");
+  if (!/^\d{1,3}(\.\d{3})*(,\d{1,2})?$|^\d+(,\d{1,2})?$/.test(cleaned)) {
+    return null;
+  }
+  const [units, fraction = ""] = cleaned.replace(/\./g, "").split(",");
+  return Number(units) * 100 + Number(fraction.padEnd(2, "0"));
+}

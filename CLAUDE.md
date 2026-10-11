@@ -41,8 +41,9 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 
 - Código, nomes de arquivos, pastas, tabelas e commits em inglês. Texto de `docs/` e da interface em português.
 - O que conta como gasto ou receita é decidido só em `src/lib/reports/amounts.ts`. Relatórios e totais usam essas funções; não refaça a regra em consultas ou componentes.
+- Orçamento: a regra fica em `src/lib/budget/budget.ts` e a escrita em `src/server/budget/budgets.ts`. Valores digitados em reais passam por `parseReais` (`src/lib/format.ts`).
 - Cálculos de relatório são funções puras em `src/lib/reports/` sobre as linhas de `loadReportRows` (mês) ou `loadYearRows` (ano). Prefira as versões para qualquer conjunto de linhas (`summarize`, `categoryBreakdown`, `merchantRanking`).
-- Os relatórios têm três visões em abas (`/reports`, `/reports/year`, `/reports/subscriptions`); as peças comuns ficam em `src/app/(app)/reports/parts.tsx`. Visão nova entra como aba, não como item do cabeçalho.
+- Os relatórios têm quatro visões em abas (`/reports`, `/reports/budget`, `/reports/year`, `/reports/subscriptions`); as peças comuns ficam em `src/app/(app)/reports/parts.tsx`. Visão nova entra como aba, não como item do cabeçalho.
 - Arquivos para download saem de rotas em `src/app/api/export/`, que chamam `getSession()` e respondem com `Cache-Control: no-store`. CSV é gerado por `toCsv` (`src/lib/export/csv.ts`), que neutraliza fórmulas.
 - Nunca compare transações pelo `FITID` puro: no cartão ele se repete. Use o `externalId` montado pelo leitor (`docs/formats/nubank.md`).
 - Dinheiro é sempre inteiro em centavos (`amountCents`); use `toCents` de `src/lib/money.ts`, nunca `parseFloat`.
@@ -52,7 +53,7 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 - Páginas e server actions obtêm o cliente com `getDb()` (`src/server/db.ts`), dentro da função, nunca no topo do módulo: o build precisa passar sem `DATABASE_URL`.
 - Páginas protegidas ficam em `src/app/(app)/`, que traz o cabeçalho comum. Leitura de dados fica em um componente assíncrono dentro de `<Suspense>` e começa por `requireSession()`.
 - Datas trafegam como `"AAAA-MM-DD"`; a conversão para `Date` fica em `src/server/dates.ts`. Formatação para a tela em `src/lib/format.ts`.
-- A interface é usada no iPhone: toda tela nova deve funcionar em 375 px de largura, sem rolagem horizontal.
+- O foco atual é o uso no computador (decisão do autor em 2026-10-11). Projete e verifique as telas em largura de desktop; não é preciso conferir em 375 px por enquanto, mas não remova o que já funciona no celular. O PWA para iPhone (fase 8) está em espera.
 
 ## Interface
 

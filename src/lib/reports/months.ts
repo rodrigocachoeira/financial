@@ -24,3 +24,10 @@ export function addMonthsToDate(isoDate: string, count: number): string {
   const day = Math.min(Number(isoDate.slice(8, 10)), lastDay);
   return month + "-" + String(day).padStart(2, "0");
 }
+
+/** The calendar month at `now` in a time zone, as YYYY-MM. */
+export function currentMonthIn(timeZone: string, now: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit" }).formatToParts(now);
+  const part = (type: string) => parts.find((entry) => entry.type === type)!.value;
+  return part("year") + "-" + part("month");
+}

@@ -27,6 +27,7 @@ model Category {
   merchants    Merchant[]
   transactions Transaction[]
   rules        CategoryRule[]
+  budgets      Budget[]
 
   @@map("categories")
 }
@@ -44,4 +45,22 @@ model CategoryRule {
 
   @@index([categoryId])
   @@map("category_rules")
+}
+
+/// Monthly spending limit of a category, valid from a month onwards.
+/// The limit of a month is the row with the greatest startMonth not after it.
+model Budget {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  categoryId  String   @map("category_id") @db.Uuid
+  /// First month the limit applies to, YYYY-MM.
+  startMonth  String   @map("start_month")
+  /// Null ends the limit from that month on.
+  amountCents Int?     @map("amount_cents")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, startMonth])
+  @@map("budgets")
 }

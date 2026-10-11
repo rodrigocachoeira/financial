@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const TABS = [
   { href: "/reports", label: "Mês" },
+  { href: "/reports/budget", label: "Orçamento" },
   { href: "/reports/year", label: "Ano" },
   { href: "/reports/subscriptions", label: "Recorrentes" },
 ];
@@ -14,7 +15,7 @@ export function ReportTabs() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Visões dos relatórios" className="flex gap-1 rounded-xl bg-surface-muted p-1">
+    <nav aria-label="Visões dos relatórios" className="flex gap-1 overflow-x-auto rounded-xl bg-surface-muted p-1">
       {TABS.map(({ href, label }) => {
         const active = pathname === href;
         return (
@@ -22,7 +23,7 @@ export function ReportTabs() {
             key={href}
             href={href}
             aria-current={active ? "page" : undefined}
-            className={`flex-1 rounded-lg px-3 py-1.5 text-center text-sm font-medium transition-colors sm:flex-none sm:px-4 ${
+            className={`flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-sm font-medium transition-colors sm:flex-none sm:px-4 ${
               active ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground"
             }`}
           >

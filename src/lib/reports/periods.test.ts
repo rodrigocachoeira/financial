@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TransactionKind } from "../ofx";
-import { addMonthsToDate, monthsOfYear } from "./months";
+import { addMonthsToDate, currentMonthIn, monthsOfYear } from "./months";
 import {
   categoryBreakdown,
   inYear,
@@ -152,5 +152,18 @@ describe("recurring charges in detail", () => {
       charge("2026-03-20", -1000),
     ];
     expect(recurringSpending(rows, "2026-03")[0]).toMatchObject({ lastDate: "2026-03-20", lastCents: 2000 });
+  });
+});
+
+describe("currentMonthIn", () => {
+  it("gives the month in the time zone, not in UTC", () => {
+    // 01:30 UTC on the 1st is still the evening of the 31st in Sao Paulo.
+    const instant = new Date("2026-11-01T01:30:00.000Z");
+    expect(currentMonthIn("America/Sao_Paulo", instant)).toBe("2026-10");
+    expect(currentMonthIn("UTC", instant)).toBe("2026-11");
+  });
+
+  it("pads the month", () => {
+    expect(currentMonthIn("UTC", new Date("2027-03-15T12:00:00.000Z"))).toBe("2027-03");
   });
 });
