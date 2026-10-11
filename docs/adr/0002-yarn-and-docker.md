@@ -23,6 +23,6 @@ O autor prefere Yarn ao npm e quer rodar o projeto inteiro em containers.
 
 - O Yarn não instala dependências *peer* automaticamente; elas precisam estar no `package.json` (caso do `vite`, exigido pelo Vitest).
 - No Windows, o container não recebe eventos de arquivo do código montado; o hot reload usa polling e é mais lento que fora do Docker.
-- `node_modules` do container vive em um volume próprio (binários Linux); ao mudar dependências é preciso reconstruir a imagem e recriar o volume.
+- `node_modules` do container vive em um volume próprio (binários Linux); por isso o container roda `yarn install` a cada subida, e mudar dependências exige apenas reiniciá-lo.
 - A pasta `statements/` é excluída do container e do contexto de build.
 - O banco local é Postgres comum, não Neon: diferenças do driver serverless só aparecem em produção.

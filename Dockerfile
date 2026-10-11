@@ -1,6 +1,9 @@
 # Development image. Production runs on Vercel, which builds from source.
 FROM node:24-slim
 
+# Prisma's schema engine needs OpenSSL, which the slim image lacks.
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY package.json yarn.lock .yarnrc.yml ./

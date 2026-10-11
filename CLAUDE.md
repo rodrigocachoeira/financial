@@ -24,7 +24,7 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 
 - `docker compose up --build`: sobe o app (porta 3000) e o Postgres local (porta 5432)
 - `docker compose exec app yarn test`: roda um comando dentro do container do app
-- Ao mudar dependências: `docker compose build app` e `docker compose up -V` para recriar o volume de `node_modules`
+- Ao mudar dependências: basta reiniciar o app (`docker compose restart app`); o container roda `yarn install` ao subir
 - `statements/` não é montada no container. Produção roda na Vercel, sem Docker.
 
 ## Documentação (leia antes de mexer na área correspondente)
@@ -34,6 +34,7 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 - `docs/formats/nubank.md`: layout dos arquivos OFX e CSV
 - `docs/adr/`: decisões de arquitetura já tomadas; não reverter sem novo ADR
 - `docs/roadmap.md`: fases e a próxima tarefa
+- `docs/deploy.md`: variáveis de ambiente e passo a passo de Google, Neon e Vercel
 
 ## Convenções
 
@@ -43,6 +44,14 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 - Regra de negócio fica em `src/lib/`, sem depender de Next.js nem de Prisma, para ser testável isoladamente.
 - Código que acessa o banco fica em `src/server/` e recebe o `PrismaClient` por parâmetro; `src/lib/` nunca importa Prisma.
 - Funcionalidade nova começa por uma spec em `docs/specs/`.
+
+## Autenticação
+
+- Tudo é protegido por padrão. Caminhos públicos são só os listados em `isPublicPath` (`src/lib/auth/access.ts`).
+- Toda página protegida chama `requireSession()` e toda rota de API ou server action chama `getSession()` (`src/server/auth/session.ts`), mesmo com o `src/proxy.ts` no caminho. O proxy é só uma checagem otimista.
+- `cacheComponents` está ligado: leitura de sessão fica dentro de `<Suspense>`, nunca no topo de um layout.
+- No Next.js 16 o arquivo é `proxy.ts`; não crie `middleware.ts`.
+- Não registre e-mail nem token em logs.
 
 ## Banco de dados
 

@@ -16,13 +16,15 @@
     "db:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "vercel-build": "prisma generate && node scripts/migrate-on-production.mjs && next build"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
     "dotenv": "^18.0.7",
     "next": "16.4.0",
+    "next-auth": "4.24.15",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

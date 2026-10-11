@@ -7,7 +7,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    // Empty when only generating the client (build, CI); commands that reach the database need it set.
-    url: process.env.DATABASE_URL ?? "",
+    // Migrations use the direct connection when there is one (Neon); the app itself always uses DATABASE_URL.
+    // Empty when only generating the client (build, CI).
+    url: process.env.DIRECT_URL || process.env.DATABASE_URL || "",
   },
 });

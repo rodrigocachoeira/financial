@@ -10,7 +10,7 @@ Requer o Docker Desktop.
 docker compose up --build
 ```
 
-Abra http://localhost:3000. O Postgres local fica em `localhost:5432` (usuário, senha e banco: `financial`).
+Abra http://localhost:3000. O login exige as variáveis do Google no `.env` (veja [docs/deploy.md](docs/deploy.md)). O Postgres local fica em `localhost:5432` (usuário, senha e banco: `financial`).
 
 Para rodar comandos dentro do container:
 
@@ -57,4 +57,4 @@ yarn dev
 
 ## Documentação
 
-Comece por [docs/product.md](docs/product.md) e [docs/roadmap.md](docs/roadmap.md).
+Comece por [docs/product.md](docs/product.md) e [docs/roadmap.md](docs/roadmap.md). Para configurar o login e publicar, siga [docs/deploy.md](docs/deploy.md).
