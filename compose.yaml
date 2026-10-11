@@ -1,0 +1,42 @@
+# Local development only. Credentials below are throwaway values for the local database.
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://financial:financial@db:5432/financial
+      # File events do not cross the Windows bind mount; poll instead.
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - .:/app
+      # Keep Linux-built dependencies and build output inside the container.
+      - node_modules:/app/node_modules
+      - next_cache:/app/.next
+      # Real statements never enter the container.
+      - /app/statements
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: financial
+      POSTGRES_PASSWORD: financial
+      POSTGRES_DB: financial
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U financial -d financial"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  node_modules:
+  next_cache:
+  db_data:

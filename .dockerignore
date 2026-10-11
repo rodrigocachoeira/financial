@@ -1,0 +1,11 @@
+.git
+node_modules
+.next
+coverage
+statements
+.env
+.env.*
+!.env.example
+.yarn/install-state.gz
+.yarn/cache
+*.log

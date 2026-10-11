@@ -4,11 +4,19 @@ node_modules/
 out/
 dist/
 coverage/
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+
+# Yarn (a versão fixada em .yarn/releases é versionada)
+.yarn/*
+!.yarn/releases
 
 # Segredos
 .env
 .env.*
 !.env.example
+*.pem
 
 # Dados financeiros reais: nunca versionar
 statements/
