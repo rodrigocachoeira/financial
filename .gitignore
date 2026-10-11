@@ -1,0 +1,29 @@
+# Dependências e build
+node_modules/
+.next/
+out/
+dist/
+coverage/
+
+# Segredos
+.env
+.env.*
+!.env.example
+
+# Dados financeiros reais: nunca versionar
+statements/
+*.ofx
+*.csv
+!fixtures/**/*.csv
+!fixtures/**/*.ofx
+
+# Arquivos pessoais do Claude Code
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Sistema e editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
