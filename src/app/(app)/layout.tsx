@@ -21,9 +21,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <ToastProvider>
       <header className="sticky top-0 z-10 border-b border-border bg-surface/85 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-2 px-4 py-2.5">
-          <nav className="flex items-center gap-1">
-            <Link href="/transactions" className="mr-1 flex items-center gap-2 sm:mr-3" aria-label="Financial">
+        <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-1 px-3 py-2.5 sm:gap-2 sm:px-4">
+          <nav className="flex min-w-0 items-center gap-0.5 sm:gap-1">
+            <Link href="/reports" className="mr-1 flex shrink-0 items-center gap-2 sm:mr-3" aria-label="Financial">
               <Logo className="size-8 text-sm" />
               <span className="hidden font-semibold tracking-tight sm:inline">Financial</span>
             </Link>

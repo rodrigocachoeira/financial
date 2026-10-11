@@ -38,6 +38,8 @@ Glossário e regras de negócio. Termos em inglês são os nomes usados no códi
 
 - Gasto: transação de saída que não é transferência interna.
 - Receita: transação de entrada que não é transferência interna nem estorno.
+- Dinheiro que só muda de lugar não é gasto nem receita: transações em categoria com `countsAsSpending = false` ("Transferências próprias": Pix entre contas do próprio usuário, aplicações) ficam fora dos totais e dos relatórios.
+- Mês de um gasto é o mês-calendário da data da transação. No cartão, a compra conta no mês em que foi feita e cada parcela no mês em que é cobrada.
 - Estorno abate o gasto da categoria da compra original; não é receita. No cartão, todo crédito que não seja pagamento de fatura é estorno (`CARD_REFUND`): estorno de compra, IOF devolvido, desconto.
 - O estorno aponta para o estabelecimento da compra, e o IOF e sua devolução para o estabelecimento `IOF`, de modo que se anulem na mesma categoria.
 
@@ -65,7 +67,7 @@ Glossário e regras de negócio. Termos em inglês são os nomes usados no códi
 
 ### Recorrência
 
-- Gasto recorrente: mesmo estabelecimento, valor parecido, em pelo menos três meses seguidos. Os limites exatos serão definidos na spec do relatório.
+- Gasto recorrente: mesmo estabelecimento com gasto em três ou mais meses-calendário seguidos, o último sendo o mês de referência ou o anterior, e cada mês dentro de 20% da mediana. Parcelas não são recorrência.
 
 ## Privacidade
 

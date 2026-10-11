@@ -40,6 +40,8 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 ## Convenções
 
 - Código, nomes de arquivos, pastas, tabelas e commits em inglês. Texto de `docs/` e da interface em português.
+- O que conta como gasto ou receita é decidido só em `src/lib/reports/amounts.ts`. Relatórios e totais usam essas funções; não refaça a regra em consultas ou componentes.
+- Cálculos de relatório são funções puras em `src/lib/reports/` sobre as linhas de `loadReportRows`.
 - Nunca compare transações pelo `FITID` puro: no cartão ele se repete. Use o `externalId` montado pelo leitor (`docs/formats/nubank.md`).
 - Dinheiro é sempre inteiro em centavos (`amountCents`); use `toCents` de `src/lib/money.ts`, nunca `parseFloat`.
 - Testes ficam ao lado do código (`foo.ts` e `foo.test.ts`) e usam os arquivos de `fixtures/`.
@@ -54,6 +56,7 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 
 - Cores vêm dos tokens de `src/app/globals.css` (`bg-surface`, `text-muted`, `border-border`, `bg-accent`, `text-positive`, `text-negative`, e as variantes `-soft`), com valores para tema claro e escuro. Não use cores fixas do Tailwind (`zinc-*`, `red-*`) nas telas.
 - Botões, cartões, selos e esqueletos usam as classes de `src/components/ui.ts`; ícones vêm de `src/components/icons.tsx`. Não adicione biblioteca de ícones ou de componentes.
+- Gráficos são HTML e CSS próprios, sem biblioteca: uma cor só (o destaque) para magnitude, cor de categoria apenas como bolinha ao lado do nome, texto sempre nos tokens de texto, e uma tabela `sr-only` com os mesmos números.
 - Listas de escolha usam `SelectMenu` (`src/components/select-menu.tsx`), que abre um menu flutuante no desktop e uma folha inferior no celular. Não use `<select>` nativo: a lista aberta dele não aceita estilo.
 - Toda ação demorada mostra progresso: `Spinner` no botão durante o envio e esqueleto no `fallback` do `<Suspense>`.
 - Entrada de dinheiro em `text-positive`, saída em `text-foreground` com ícone em `negative`, transferência interna em `text-muted`.

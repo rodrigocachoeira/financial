@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { formatCents, formatDate, formatDay, formatMonth, parseMonth } from "./format";
+import {
+  formatCents,
+  formatCompactCents,
+  formatDate,
+  formatDay,
+  formatMonth,
+  formatPercent,
+  formatShortMonth,
+  parseMonth,
+} from "./format";
 
 // Intl uses a non-breaking space after the currency symbol.
 const plain = (text: string) => text.replace(/ /g, " ");
@@ -49,5 +58,30 @@ describe("parseMonth", () => {
 
   it.each(["2026-13", "2026-00", "abc", "2026-1", "2026-01-05", "", undefined])("rejects %j", (value) => {
     expect(parseMonth(value)).toBeNull();
+  });
+});
+
+describe("formatCompactCents", () => {
+  it("shortens large amounts", () => {
+    expect(plain(formatCompactCents(250000))).toBe("R$ 2,5 mil");
+    expect(plain(formatCompactCents(100000))).toBe("R$ 1 mil");
+    expect(plain(formatCompactCents(50000))).toBe("R$ 500");
+    expect(plain(formatCompactCents(0))).toBe("R$ 0");
+  });
+});
+
+describe("formatPercent", () => {
+  it("formats a fraction as a whole percentage", () => {
+    expect(formatPercent(0.124)).toBe("12%");
+    expect(formatPercent(1)).toBe("100%");
+    expect(formatPercent(0)).toBe("0%");
+  });
+});
+
+describe("formatShortMonth", () => {
+  it("abbreviates the month without a trailing period", () => {
+    expect(formatShortMonth("2026-01")).toBe("jan");
+    expect(formatShortMonth("2026-09")).toBe("set");
+    expect(formatShortMonth("2026-12")).toBe("dez");
   });
 });

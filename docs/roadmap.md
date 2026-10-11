@@ -10,8 +10,8 @@ Cada fase termina em algo verificável. Uma fase só começa com a spec escrita 
 | 3 | Login de usuário único e deploy na Vercel | rota protegida inacessível sem login, em produção | feita (publicada em https://financial-kappa-puce.vercel.app) |
 | 4 | Tela de upload e lista de transações | importar as fixtures pela interface | feita |
 | 5 | Categorização por regras e correção manual que vira regra | testes das regras; correção reflete na importação seguinte | feita |
-| 6 | Relatórios: por categoria, mês a mês, estabelecimentos, recorrentes, parcelas futuras | testes dos cálculos com dados conhecidos | próxima |
-| 7 | Dicas geradas por IA com dados agregados | spec define o que é enviado ao serviço | |
+| 6 | Relatórios: por categoria, mês a mês, estabelecimentos, recorrentes, parcelas futuras | testes dos cálculos com dados conhecidos | feita |
+| 7 | Dicas geradas por IA com dados agregados | spec define o que é enviado ao serviço | próxima |
 | 8 | PWA | instalar no iPhone pela tela de início | |
 
 ## Pendências fora das fases

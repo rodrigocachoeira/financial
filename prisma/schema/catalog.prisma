@@ -15,11 +15,14 @@ model Merchant {
 }
 
 model Category {
-  id        String   @id @default(uuid(7)) @db.Uuid
-  name      String   @unique
+  id               String   @id @default(uuid(7)) @db.Uuid
+  name             String   @unique
   /// Hex color for badges and charts.
-  color     String
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  color            String
+  /// False for money that only changes place (transfers between own accounts, investments):
+  /// transactions in such a category are left out of spending and income reports.
+  countsAsSpending Boolean  @default(true) @map("counts_as_spending")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   merchants    Merchant[]
   transactions Transaction[]

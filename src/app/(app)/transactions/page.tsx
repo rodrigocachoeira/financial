@@ -28,14 +28,14 @@ const SOURCE_BADGES: Record<Source, string> = {
   CREDIT_CARD: badge.accent,
 };
 
-function Total(props: { label: string; cents: number; tone: string; icon: ReactNode }) {
+function Total(props: { label: string; cents: number; tone: string; icon: ReactNode; className?: string }) {
   return (
-    <div className={`${card} flex min-w-0 flex-col gap-1.5 p-3 sm:p-4`}>
+    <div className={`${card} flex min-w-0 flex-col gap-1.5 p-3 sm:p-4 ${props.className ?? ""}`}>
       <dt className="flex items-center gap-1.5 text-xs font-medium text-muted">
         <span className={`grid size-5 shrink-0 place-items-center rounded-full text-xs ${props.tone}`}>{props.icon}</span>
         {props.label}
       </dt>
-      <dd className="truncate text-sm font-semibold tabular-nums sm:text-xl">{formatCents(props.cents)}</dd>
+      <dd className="truncate text-lg font-semibold sm:text-xl">{formatCents(props.cents)}</dd>
     </div>
   );
 }
@@ -133,10 +133,16 @@ async function Transactions({ searchParams }: Pick<PageProps<"/transactions">, "
         category={category ?? ""}
       />
 
-      <dl className="grid grid-cols-3 gap-2 sm:gap-3">
+      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
         <Total label="Entradas" cents={totals.inCents} tone="bg-positive-soft text-positive" icon={<ArrowDownLeftIcon />} />
         <Total label="Saídas" cents={totals.outCents} tone="bg-negative-soft text-negative" icon={<ArrowUpRightIcon />} />
-        <Total label="Saldo" cents={totals.netCents} tone="bg-accent-soft text-accent" icon={<SwapIcon />} />
+        <Total
+          label="Saldo"
+          cents={totals.netCents}
+          tone="bg-accent-soft text-accent"
+          icon={<SwapIcon />}
+          className="col-span-2 sm:col-span-1"
+        />
       </dl>
 
       {rows.length === 0 ? (

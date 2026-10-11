@@ -1,5 +1,6 @@
 import { parseMonth } from "@/lib/format";
 import { isInternalTransfer, type Installment, type Source, type TransactionKind } from "@/lib/ofx";
+import { incomeCents, spentCents } from "@/lib/reports/amounts";
 import { toDate, toIsoDate } from "../dates";
 import type { PrismaClient } from "../prisma";
 
@@ -18,6 +19,7 @@ export interface TransactionCategory {
   name: string;
   /** Hex color. */
   color: string;
+  countsAsSpending: boolean;
 }
 
 export interface TransactionRow {
@@ -43,7 +45,10 @@ export interface TransactionTotals {
 
 export interface TransactionList {
   rows: TransactionRow[];
-  /** Internal transfers (bill payments) are left out. Card refunds lower `outCents`; they are not income. */
+  /**
+   * Internal transfers and categories that do not count as spending are left out.
+   * Card refunds lower `outCents`; they are not income.
+   */
   totals: TransactionTotals;
 }
 
@@ -76,7 +81,7 @@ export async function listTransactions(db: PrismaClient, filters: TransactionFil
       categorySource: true,
       merchant: { select: { name: true } },
       account: { select: { source: true } },
-      category: { select: { id: true, name: true, color: true } },
+      category: { select: { id: true, name: true, color: true, countsAsSpending: true } },
     },
   });
 
@@ -99,16 +104,10 @@ export async function listTransactions(db: PrismaClient, filters: TransactionFil
 
   const totals = { inCents: 0, outCents: 0, netCents: 0 };
   for (const row of rows) {
-    if (row.internalTransfer) {
-      continue;
-    }
-    if (row.amountCents > 0 && row.kind !== "CARD_REFUND") {
-      totals.inCents += row.amountCents;
-    } else {
-      totals.outCents += row.amountCents;
-    }
-    totals.netCents += row.amountCents;
+    totals.inCents += incomeCents(row);
+    totals.outCents -= spentCents(row);
   }
+  totals.netCents = totals.inCents + totals.outCents;
 
   return { rows, totals };
 }

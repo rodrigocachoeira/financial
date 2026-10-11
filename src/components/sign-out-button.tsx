@@ -19,7 +19,7 @@ export function SignOutButton() {
       className={buttonGhost}
     >
       {pending ? <Spinner /> : <LogOutIcon />}
-      Sair
+      <span className="sr-only sm:not-sr-only">Sair</span>
     </button>
   );
 }

@@ -2,6 +2,14 @@ const LOCALE = "pt-BR";
 
 const currency = new Intl.NumberFormat(LOCALE, { style: "currency", currency: "BRL" });
 const monthAndYear = new Intl.DateTimeFormat(LOCALE, { month: "long", year: "numeric", timeZone: "UTC" });
+const compactCurrency = new Intl.NumberFormat(LOCALE, {
+  style: "currency",
+  currency: "BRL",
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+const percent = new Intl.NumberFormat(LOCALE, { style: "percent", maximumFractionDigits: 0 });
+const shortMonth = new Intl.DateTimeFormat(LOCALE, { month: "short", timeZone: "UTC" });
 const dayOfMonth = new Intl.DateTimeFormat(LOCALE, { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 
 /** -4590 -> "-R$ 45,90" */
@@ -46,4 +54,19 @@ export function parseMonth(value: string | undefined): MonthRange | null {
   const next = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
   const firstDay = (y: number, m: number) => `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-01`;
   return { start: firstDay(year, month), endExclusive: firstDay(next.year, next.month) };
+}
+
+/** 250000 -> "R$ 2,5 mil". For axis ticks, where the full amount does not fit. */
+export function formatCompactCents(cents: number): string {
+  return compactCurrency.format(cents / 100);
+}
+
+/** 0.124 -> "12%" */
+export function formatPercent(fraction: number): string {
+  return percent.format(fraction);
+}
+
+/** "2026-01" -> "jan" */
+export function formatShortMonth(month: string): string {
+  return shortMonth.format(new Date(`${month}-01T00:00:00.000Z`)).replace(".", "");
 }

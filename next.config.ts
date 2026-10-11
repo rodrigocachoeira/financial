@@ -23,8 +23,8 @@ const nextConfig: NextConfig = {
     },
   },
   async redirects() {
-    // Until the reports exist, the transaction list is the home page.
-    return [{ source: "/", destination: "/transactions", permanent: false }];
+    // The reports are the home page.
+    return [{ source: "/", destination: "/reports", permanent: false }];
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

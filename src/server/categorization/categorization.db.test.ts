@@ -37,7 +37,7 @@ afterAll(() => db.$disconnect());
 describe("seed data", () => {
   it("creates the categories and default rules", async () => {
     const categories = await listCategories(db);
-    expect(categories).toHaveLength(14);
+    expect(categories).toHaveLength(15);
     expect(categories.map((category) => category.name)).toContain("Alimentação");
     expect(categories.every((category) => /^#[0-9a-f]{6}$/.test(category.color))).toBe(true);
     expect(categories.map((c) => c.name)).toEqual([...categories.map((c) => c.name)].sort((a, b) => a.localeCompare(b, "pt-BR")));
