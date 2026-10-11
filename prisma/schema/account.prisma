@@ -25,6 +25,9 @@ model Import {
   periodEnd           DateTime  @map("period_end") @db.Date
   ledgerBalanceCents  Int?      @map("ledger_balance_cents")
   ledgerBalanceDate   DateTime? @map("ledger_balance_date") @db.Date
+  /// Net yield of the account over the period, as the file states it. Null for card statements
+  /// and for files imported before this was read.
+  netYieldCents       Int?      @map("net_yield_cents")
   /// Transactions in the file.
   transactionCount    Int       @map("transaction_count")
   /// Transactions actually stored (not seen in earlier imports).

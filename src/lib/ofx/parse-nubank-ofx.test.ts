@@ -18,6 +18,7 @@ describe("parseNubankOfx: account statement", () => {
       periodEnd: "2026-01-31",
       ledgerBalanceCents: 347173,
       ledgerBalanceDate: "2026-01-31",
+      netYieldCents: 1234,
     });
     expect(statement.transactions).toHaveLength(5);
   });
@@ -88,6 +89,7 @@ describe("parseNubankOfx: credit card statement", () => {
       periodEnd: "2026-02-03",
       ledgerBalanceCents: -49710,
       ledgerBalanceDate: "2026-02-10",
+      netYieldCents: null,
     });
     expect(statement.transactions).toHaveLength(5);
   });
@@ -303,6 +305,22 @@ describe("parseNubankOfx: edge cases", () => {
   it("returns an empty list when there are no transactions", () => {
     const ofx = accountOfx.replace(/<STMTTRN>[\s\S]*<\/STMTTRN>\n/, "");
     expect(parseNubankOfx(ofx).transactions).toEqual([]);
+  });
+
+  it("reads the net yield only from its own entry of the balance list", () => {
+    const zero = accountOfx.replace("<VALUE>12.34</VALUE>", "<VALUE>0.00</VALUE>");
+    expect(parseNubankOfx(zero).netYieldCents).toBe(0);
+
+    const otherEntry = accountOfx.replace("<NAME>RENDIMENTO LIQUIDO</NAME>", "<NAME>OUTRO SALDO</NAME>");
+    expect(parseNubankOfx(otherEntry).netYieldCents).toBeNull();
+
+    const withoutList = accountOfx.replace(/<BALLIST>[\s\S]*<\/BALLIST>\n/, "");
+    expect(parseNubankOfx(withoutList).netYieldCents).toBeNull();
+  });
+
+  it("rejects a net yield that is not an amount", () => {
+    const ofx = accountOfx.replace("<VALUE>12.34</VALUE>", "<VALUE>doze</VALUE>");
+    expect(() => parseNubankOfx(ofx)).toThrow(OfxParseError);
   });
 
   it("returns null balance when LEDGERBAL is missing", () => {

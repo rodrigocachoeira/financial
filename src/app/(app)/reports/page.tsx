@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
-import { ArrowDownLeftIcon, ArrowUpRightIcon, SwapIcon, UploadIcon } from "@/components/icons";
+import { ArrowDownLeftIcon, ArrowUpRightIcon, SwapIcon, TrendingUpIcon, UploadIcon } from "@/components/icons";
 import { badge, buttonPrimary, card, skeleton } from "@/components/ui";
-import { formatCents, formatMonth, formatPercent, parseMonth } from "@/lib/format";
+import { formatCents, formatDate, formatMonth, formatPercent, parseMonth } from "@/lib/format";
 import { buildInsightsPayload } from "@/lib/insights/payload";
 import { buildInsightsPrompt } from "@/lib/insights/prompt";
 import { addMonths } from "@/lib/reports/months";
@@ -22,9 +22,11 @@ import {
   type RecurringSpending,
   type ReportCategory,
 } from "@/lib/reports/reports";
+import { hasMultiMonthStatement, yieldEvolution, type MonthYield } from "@/lib/reports/yield";
 import { requireSession } from "@/server/auth/session";
 import { getDb } from "@/server/db";
 import { loadReportRows } from "@/server/reports/load-report-rows";
+import { loadYieldSources } from "@/server/reports/load-yield-sources";
 import { listMonths } from "@/server/transactions/list-transactions";
 import { EvolutionChart } from "./evolution-chart";
 import { InsightsCard } from "./insights-card";
@@ -65,7 +67,8 @@ function CategoryLabel({ category }: { category: ReportCategory | null }) {
 
 function Tile(props: {
   label: string;
-  cents: number;
+  /** Null shows a dash: there is no figure for the month. */
+  cents: number | null;
   tone: string;
   icon: ReactNode;
   className?: string;
@@ -77,7 +80,9 @@ function Tile(props: {
         <span className={`grid size-5 shrink-0 place-items-center rounded-full text-xs ${props.tone}`}>{props.icon}</span>
         {props.label}
       </dt>
-      <dd className="truncate text-lg font-semibold sm:text-xl">{formatCents(props.cents)}</dd>
+      <dd className={`truncate text-lg font-semibold sm:text-xl ${props.cents === null ? "text-muted" : ""}`}>
+        {props.cents === null ? "—" : formatCents(props.cents)}
+      </dd>
       {props.children}
     </div>
   );
@@ -255,6 +260,70 @@ function Installments({ installments }: { installments: FutureInstallments }) {
   );
 }
 
+const dayAndMonth = (isoDate: string) => formatDate(isoDate).slice(0, 5);
+
+function YieldNote({ entry }: { entry: MonthYield }) {
+  if (entry.cents === null) {
+    return <p className="text-xs text-muted">sem extrato da conta no mês</p>;
+  }
+  return entry.partialUntil ? <p className="text-xs text-muted">parcial, até {dayAndMonth(entry.partialUntil)}</p> : null;
+}
+
+function YieldList({ months, multiMonth }: { months: MonthYield[]; multiMonth: boolean }) {
+  const known = months.filter((entry) => entry.cents !== null);
+  if (known.length === 0) {
+    return (
+      <Empty>
+        Nenhum extrato da conta com o rendimento do período. Reenvie os extratos da conta, um por mês, para preencher
+        esta seção.
+      </Empty>
+    );
+  }
+  const max = Math.max(...known.map((entry) => entry.cents!), 1);
+  const total = known.reduce((sum, entry) => sum + entry.cents!, 0);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-sm">
+        <span className="text-xl font-semibold">{formatCents(total)}</span>{" "}
+        <span className="text-muted">
+          em {known.length} {known.length === 1 ? "mês" : "meses"} com extrato
+        </span>
+      </p>
+      <ul className="flex flex-col gap-2">
+        {months.map((entry) => (
+          <li key={entry.month} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3 text-sm">
+            <span className="text-muted">
+              {formatMonth(entry.month).split(" ")[0].slice(0, 3)}/{entry.month.slice(2, 4)}
+            </span>
+            <span className="flex h-2 items-stretch" aria-hidden="true">
+              {entry.cents !== null && entry.cents > 0 && (
+                <span className="min-w-1 rounded-r bg-accent" style={{ width: `${(entry.cents / max) * 100}%` }} />
+              )}
+            </span>
+            {entry.cents === null ? (
+              <span className="text-xs text-muted">sem extrato</span>
+            ) : (
+              <span className="text-right font-medium tabular-nums">
+                {formatCents(entry.cents)}
+                {entry.partialUntil && (
+                  <span className="block text-xs font-normal text-muted">até {dayAndMonth(entry.partialUntil)}</span>
+                )}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+      {multiMonth && (
+        <p className="text-xs text-muted">
+          Há um extrato que cobre mais de um mês. O banco informa um único valor para o período inteiro, então ele não
+          entra aqui; exporte um extrato por mês.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function NoData() {
   return (
     <div className={`${card} flex flex-col items-center gap-4 px-6 py-12 text-center`}>
@@ -282,15 +351,17 @@ async function Reports({ searchParams }: Pick<PageProps<"/reports">, "searchPara
 
   const month = typeof params.month === "string" && parseMonth(params.month) ? params.month : months[0];
   const monthOptions = months.includes(month) ? months : [month, ...months].sort().reverse();
-  const rows = await loadReportRows(getDb(), month);
+  const [rows, yieldSources] = await Promise.all([loadReportRows(getDb(), month), loadYieldSources(getDb())]);
   const summary = monthSummary(rows, month);
+  const yields = yieldEvolution(yieldSources, month, EVOLUTION_MONTHS);
+  const monthYield = yields.at(-1)!;
   const monthName = formatMonth(month);
 
   return (
     <div className="flex flex-col gap-5">
       <MonthSelect months={monthOptions} month={month} />
 
-      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
+      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
         <Tile
           label="Gasto"
           className="col-span-2 sm:col-span-1"
@@ -307,12 +378,21 @@ async function Reports({ searchParams }: Pick<PageProps<"/reports">, "searchPara
           icon={<ArrowDownLeftIcon />}
         />
         <Tile label="Saldo" cents={summary.netCents} tone="bg-accent-soft text-accent" icon={<SwapIcon />} />
+        <Tile
+          label="Rendimento"
+          className="col-span-2 sm:col-span-1"
+          cents={monthYield.cents}
+          tone="bg-positive-soft text-positive"
+          icon={<TrendingUpIcon />}
+        >
+          <YieldNote entry={monthYield} />
+        </Tile>
       </dl>
 
       <InsightsCard
         // Remounting per month clears the "copied" state when the month changes.
         key={month}
-        prompt={summary.spentCents > 0 ? buildInsightsPrompt(buildInsightsPayload(rows, month)) : null}
+        prompt={summary.spentCents > 0 ? buildInsightsPrompt(buildInsightsPayload(rows, month, yieldSources)) : null}
         monthName={monthName}
       />
 
@@ -335,6 +415,16 @@ async function Reports({ searchParams }: Pick<PageProps<"/reports">, "searchPara
       <Section title="Parcelas futuras" description={`O que já está comprometido depois de ${monthName}.`}>
         <Installments installments={futureInstallments(rows, month, INSTALLMENT_MONTHS)} />
       </Section>
+
+      <Section
+        title="Rendimento da conta"
+        description="Rendimento líquido que o banco informa em cada extrato da conta. Não entra na receita nem no saldo acima."
+      >
+        <YieldList
+          months={yields}
+          multiMonth={hasMultiMonthStatement(yieldSources, month, EVOLUTION_MONTHS)}
+        />
+      </Section>
     </div>
   );
 }
@@ -344,7 +434,7 @@ function ReportsSkeleton() {
     <div className="flex flex-col gap-5" aria-busy="true" aria-label="Carregando relatórios">
       <div className={`${skeleton} h-14 w-full sm:w-48`} />
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        {[0, 1, 2].map((index) => (
+        {[0, 1, 2, 3].map((index) => (
           <div key={index} className={`${skeleton} h-20`} />
         ))}
       </div>

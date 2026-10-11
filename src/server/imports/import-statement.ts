@@ -50,10 +50,16 @@ export function importStatement(db: PrismaClient, input: ImportInput): Promise<I
           periodEnd: toDate(statement.periodEnd),
           ledgerBalanceCents: statement.ledgerBalanceCents,
           ledgerBalanceDate: statement.ledgerBalanceDate ? toDate(statement.ledgerBalanceDate) : null,
+          netYieldCents: statement.netYieldCents,
           transactionCount: transactions.length,
           newTransactionCount: 0,
         },
       }));
+
+    // A file imported before the reader extracted the yield gets it when it is sent again.
+    if (existing && existing.netYieldCents === null && statement.netYieldCents !== null) {
+      await tx.import.update({ where: { id: existing.id }, data: { netYieldCents: statement.netYieldCents } });
+    }
 
     const merchantNames = [...new Set(transactions.flatMap((t) => (t.merchant ? [t.merchant] : [])))];
     await tx.merchant.createMany({ data: merchantNames.map((name) => ({ name })), skipDuplicates: true });

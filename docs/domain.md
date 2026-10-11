@@ -43,6 +43,11 @@ Glossário e regras de negócio. Termos em inglês são os nomes usados no códi
 - Estorno abate o gasto da categoria da compra original; não é receita. No cartão, todo crédito que não seja pagamento de fatura é estorno (`CARD_REFUND`): estorno de compra, IOF devolvido, desconto.
 - O estorno aponta para o estabelecimento da compra, e o IOF e sua devolução para o estabelecimento `IOF`, de modo que se anulem na mesma categoria.
 
+### Rendimento da conta
+
+- O extrato da conta informa um rendimento líquido por arquivo, para o período inteiro. Não é receita nem entra no saldo; é mostrado à parte.
+- O rendimento de um mês vem do extrato mais completo daquele mês. Valores de extratos diferentes nunca são somados, e um extrato que cobre mais de um mês não é dividido.
+
 ### Parcelas
 
 - Uma compra parcelada aparece como uma transação por fatura, com o sufixo ` - Parcela n/total`.

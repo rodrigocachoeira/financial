@@ -126,7 +126,7 @@ O leitor é estrito: um erro em qualquer transação rejeita o arquivo inteiro. 
 - Gravação no banco e detecção de duplicidade entre importações (fase 2).
 - Categorização (fase 5).
 - Remoção do prefixo do intermediador (`MP *`, `IFD *`) do `merchant`.
-- `BALLIST` (rendimento líquido do período).
+- `BALLIST` (rendimento líquido do período): passou a ser lido em 2026-10-11, ver `account-yield.md`.
 - OFX de outros bancos.
 
 ## Dúvidas em aberto

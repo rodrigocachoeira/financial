@@ -146,6 +146,7 @@ describe("what leaves the application", () => {
 
   it("has only the expected top-level fields", () => {
     expect(Object.keys(payload).sort()).toEqual([
+      "accountYield",
       "categories",
       "evolution",
       "installments",
@@ -155,6 +156,33 @@ describe("what leaves the application", () => {
       "summary",
       "uncategorizedShare",
     ]);
+  });
+});
+
+describe("account yield in the summary", () => {
+  const sources = [
+    { periodStart: "2026-03-01", periodEnd: "2026-03-31", netYieldCents: 4321, importedAt: "2026-04-01T00:00:00.000Z" },
+    { periodStart: "2026-04-01", periodEnd: "2026-04-10", netYieldCents: 1200, importedAt: "2026-04-11T00:00:00.000Z" },
+  ];
+
+  it("is absent without a statement of the month", () => {
+    expect(payload.accountYield).toBeNull();
+    expect(buildInsightsPrompt(payload)).not.toContain("Rendimento líquido da conta:");
+  });
+
+  it("is stated apart from income", () => {
+    const withYield = buildInsightsPayload(rows, "2026-03", sources);
+    expect(withYield.accountYield).toEqual({ cents: 4321, partialUntil: null });
+    expect(withYield.summary.incomeCents).toBe(500000);
+    const prompt = buildInsightsPrompt(withYield);
+    expect(prompt).toContain("- Rendimento líquido da conta: R$ 43,21\n");
+    expect(prompt).toContain("não está somado na receita");
+  });
+
+  it("says when the figure covers only part of the month", () => {
+    const partial = buildInsightsPayload(rows, "2026-04", sources);
+    expect(partial.accountYield).toEqual({ cents: 1200, partialUntil: "2026-04-10" });
+    expect(buildInsightsPrompt(partial)).toContain("Rendimento líquido da conta: R$ 12,00 (parcial, até 10/04)");
   });
 });
 

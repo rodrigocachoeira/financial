@@ -10,6 +10,7 @@ import {
   topMerchants,
   type ReportRow,
 } from "../reports/reports";
+import { monthYield, type YieldSource } from "../reports/yield";
 
 /**
  * Everything that may leave the application to be analyzed by an AI: aggregates of one month.
@@ -41,6 +42,11 @@ export interface InsightsPayload {
   };
   /** Fraction of the month's spending still without a category. */
   uncategorizedShare: number;
+  /**
+   * Net yield of the account in the month, from the account statement. Not part of `incomeCents`.
+   * Null when no statement of the month was imported.
+   */
+  accountYield: { cents: number; partialUntil: string | null } | null;
 }
 
 export const INSIGHTS_EVOLUTION_MONTHS = 6;
@@ -56,7 +62,8 @@ function sinceFirstSpending<T extends { spentCents: number }>(months: T[]): T[] 
   return first === -1 ? months.slice(-1) : months.slice(first);
 }
 
-export function buildInsightsPayload(rows: ReportRow[], month: string): InsightsPayload {
+export function buildInsightsPayload(rows: ReportRow[], month: string, yields: YieldSource[] = []): InsightsPayload {
+  const accountYield = monthYield(yields, month);
   // The amounts of Pix transfers stay in every total; only the counterparty's name is dropped.
   const anonymous = rows.map((row) => (NAMED_MERCHANT_KINDS.includes(row.kind) ? row : { ...row, merchant: null }));
 
@@ -99,5 +106,7 @@ export function buildInsightsPayload(rows: ReportRow[], month: string): Insights
       })),
     },
     uncategorizedShare: categories.find((entry) => entry.category === null)?.share ?? 0,
+    accountYield:
+      accountYield.cents === null ? null : { cents: accountYield.cents, partialUntil: accountYield.partialUntil },
   };
 }

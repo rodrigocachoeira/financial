@@ -17,6 +17,7 @@ Cada fase termina em algo verificável. Uma fase só começa com a spec escrita 
 ## Melhorias fora das fases
 
 - Criar e gerenciar categorias (`docs/specs/category-management.md`): feita em 2026-10-11.
+- Rendimento da conta nos relatórios (`docs/specs/account-yield.md`): feita em 2026-10-11.
 
 ## Pendências fora das fases
 

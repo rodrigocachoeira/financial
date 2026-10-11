@@ -44,6 +44,11 @@ export interface ParsedStatement {
   periodEnd: string;
   ledgerBalanceCents: number | null;
   ledgerBalanceDate: string | null;
+  /**
+   * Net yield of the account over the statement period. A summary figure of the file: it is not
+   * among the transactions. Null when the file does not state it, as in card statements.
+   */
+  netYieldCents: number | null;
   transactions: ParsedTransaction[];
 }
 
@@ -73,6 +78,7 @@ const IOF_CHARGE = /^IOF de "(.+)"$/;
 const IOF_REFUND = /^IOF de volta de /;
 const PURCHASE_REFUND = /^Estorno de "(.+?)"/;
 const IOF_MERCHANT = "IOF";
+const NET_YIELD_BALANCE = "RENDIMENTO LIQUIDO";
 // Pix descriptions: kind, counterparty name, document, institution.
 const PIX_PARTS = 4;
 
@@ -257,5 +263,21 @@ export function parseNubankOfx(content: string): ParsedStatement {
     ? parseDate(requiredValue(balance, "DTASOF", "LEDGERBAL"), "DTASOF", "LEDGERBAL")
     : null;
 
-  return { source, accountId, periodStart, periodEnd, ledgerBalanceCents, ledgerBalanceDate, transactions };
+  const yieldBalance = children(child(statement, "BALLIST") ?? { name: "", value: "", children: [] }, "BAL").find(
+    (entry) => child(entry, "NAME")?.value === NET_YIELD_BALANCE,
+  );
+  const netYieldCents = yieldBalance
+    ? parseAmount(requiredValue(yieldBalance, "VALUE", "BALLIST"), "VALUE", "BALLIST")
+    : null;
+
+  return {
+    source,
+    accountId,
+    periodStart,
+    periodEnd,
+    ledgerBalanceCents,
+    ledgerBalanceDate,
+    netYieldCents,
+    transactions,
+  };
 }

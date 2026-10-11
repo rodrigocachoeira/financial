@@ -1,4 +1,4 @@
-import { formatCents, formatMonth, formatPercent } from "../format";
+import { formatCents, formatDate, formatMonth, formatPercent } from "../format";
 import type { InsightsPayload } from "./payload";
 
 const NO_CATEGORY = "Sem categoria";
@@ -43,6 +43,7 @@ export function buildInsightsPrompt(payload: InsightsPayload): string {
       "- São valores agregados, em reais, calculados pelo meu aplicativo de finanças a partir dos extratos do banco.",
       "- \"Gasto\" já desconta estornos e não inclui pagamento de fatura nem transferências entre as minhas próprias contas.",
       "- Transferências por Pix entram somadas nas categorias, sem o nome de quem recebeu.",
+      "- O rendimento da conta é o valor líquido informado pelo banco e não está somado na receita.",
     ].join("\n"),
 
     `## Resumo de ${month}\n${list(
@@ -51,6 +52,15 @@ export function buildInsightsPrompt(payload: InsightsPayload): string {
         `Receita: ${money(summary.incomeCents)}`,
         `Saldo: ${money(summary.netCents)}`,
         `Gasto ainda sem categoria: ${formatPercent(payload.uncategorizedShare)} do total`,
+        ...(payload.accountYield
+          ? [
+              `Rendimento líquido da conta: ${money(payload.accountYield.cents)}${
+                payload.accountYield.partialUntil
+                  ? ` (parcial, até ${formatDate(payload.accountYield.partialUntil).slice(0, 5)})`
+                  : ""
+              }`,
+            ]
+          : []),
       ],
       "",
     )}`,
