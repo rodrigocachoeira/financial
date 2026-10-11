@@ -1,10 +1,8 @@
 import { readFileSync } from "node:fs";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { parseNubankOfx, type ParsedStatement, type ParsedTransaction } from "@/lib/ofx";
-import { createPrismaClient } from "../prisma";
+import { resetTestDb, testDb as db } from "../testing/test-db";
 import { importStatement } from "./import-statement";
-
-const db = createPrismaClient(process.env.TEST_DATABASE_URL!);
 
 const accountStatement = parseNubankOfx(readFileSync("fixtures/nubank/account.ofx", "utf8"));
 const cardStatement = parseNubankOfx(readFileSync("fixtures/nubank/credit-card.ofx", "utf8"));
@@ -28,9 +26,7 @@ const counts = async () => ({
 });
 
 beforeEach(async () => {
-  await db.$executeRawUnsafe(
-    'TRUNCATE "transactions", "imports", "merchants", "categories", "accounts" CASCADE',
-  );
+  await resetTestDb();
 });
 
 afterAll(() => db.$disconnect());
@@ -110,7 +106,7 @@ describe("importStatement", () => {
 
   it("leaves existing transactions untouched on overlap", async () => {
     const first = await importStatement(db, input(accountStatement, "hash-a"));
-    const category = await db.category.create({ data: { name: "Alimentação" } });
+    const category = await db.category.findUniqueOrThrow({ where: { name: "Alimentação" } });
     const target = accountStatement.transactions[1];
     await db.transaction.updateMany({
       where: { externalId: target.externalId },

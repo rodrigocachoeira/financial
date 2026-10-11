@@ -13,6 +13,8 @@ enum TransactionKind {
   DEBIT_PURCHASE
   BILL_PAYMENT
   CARD_PURCHASE
+  /// A credit on the card that gives back money already spent (refund, returned IOF, discount).
+  CARD_REFUND
   CARD_PAYMENT_RECEIVED
   OTHER
 }

@@ -36,8 +36,28 @@ Cada `STMTTRN`:
 | `TRNTYPE` | `CREDIT` ou `DEBIT` |
 | `DTPOSTED` | data da transação |
 | `TRNAMT` | decimal com ponto e duas casas; negativo é saída (`-123.45`) |
-| `FITID` | UUID, único por transação |
+| `FITID` | UUID. Na conta é único por lançamento. No cartão identifica a **compra**, não a linha (ver abaixo) |
 | `MEMO` | descrição livre |
+
+### O `FITID` do cartão se repete
+
+Verificado em 2026-10-11 com duas faturas reais. Carregam o mesmo `FITID` da compra original:
+
+- cada parcela da compra, em todas as faturas (`Parcela 10/12` e `Parcela 12/12` têm o mesmo `FITID`);
+- a cobrança de IOF da compra (`IOF de "<estabelecimento>"`);
+- o estorno da compra (`Estorno de "<estabelecimento>" (<razão social>)`).
+
+Por isso o leitor monta a identidade da linha (`externalId`) com um sufixo:
+
+| Linha | `externalId` |
+|---|---|
+| compra à vista | `<FITID>` |
+| parcela | `<FITID>#p<n>/<total>` |
+| IOF da compra | `<FITID>#iof` |
+| estorno | `<FITID>#refund` |
+| qualquer outra repetição no mesmo arquivo | `<FITID>#<data>:<centavos>`, depois `#2`, `#3` |
+
+O sufixo depende só da própria linha, para que a mesma linha tenha a mesma identidade em qualquer arquivo. A última regra é um recurso para padrões ainda desconhecidos e depende do arquivo; ao encontrar um, acrescente uma regra própria.
 
 ## CSV da conta
 
@@ -74,10 +94,14 @@ Cartão:
 |---|---|
 | `<estabelecimento>` | compra à vista |
 | `<estabelecimento> - Parcela <n>/<total>` | parcela de compra parcelada |
-| `Pagamento recebido` | pagamento da fatura anterior (`CREDIT`, valor positivo) |
+| `Pagamento recebido` | pagamento da fatura (`CREDIT`, valor positivo); pode haver mais de um por fatura |
+| `IOF de "<estabelecimento>"` | IOF de compra internacional (`DEBIT`) |
+| `IOF de volta de <estabelecimento>` | devolução do IOF (`CREDIT`), com `FITID` próprio |
+| `Estorno de "<estabelecimento>" (<razão social>)` | estorno total ou parcial de uma compra (`CREDIT`) |
+| `<estabelecimento> - NuPay` | compra pelo NuPay |
 
-Estabelecimentos costumam vir com prefixo do intermediador (`XX *NOME`).
+Estabelecimentos costumam vir com prefixo do intermediador, com ou sem espaço (`Mp *Nome`, `Ifd*Nome`, `Dl*Nome`), e em maiúsculas e minúsculas misturadas.
 
 ## Ainda não observado
 
-Estorno, IOF e compra internacional, juros e multa, resgate e aplicação em caixinha/RDB, boleto, TED, CSV da fatura. Ao encontrar um caso novo, acrescentar aqui e criar a fixture correspondente.
+Juros e multa, antecipação de parcelas, resgate e aplicação em caixinha/RDB, boleto, TED, CSV da fatura. Ao encontrar um caso novo, acrescentar aqui e criar a fixture correspondente.

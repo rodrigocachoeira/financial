@@ -7,6 +7,17 @@ export interface TransactionFilters {
   /** YYYY-MM */
   month: string;
   source?: Source;
+  /** A category id, or "none" for transactions still waiting for a category. */
+  category?: string;
+}
+
+export const UNCATEGORIZED = "none";
+
+export interface TransactionCategory {
+  id: string;
+  name: string;
+  /** Hex color. */
+  color: string;
 }
 
 export interface TransactionRow {
@@ -20,6 +31,8 @@ export interface TransactionRow {
   amountCents: number;
   installment: Installment | null;
   internalTransfer: boolean;
+  category: TransactionCategory | null;
+  categorySource: "RULE" | "MANUAL" | null;
 }
 
 export interface TransactionTotals {
@@ -30,7 +43,7 @@ export interface TransactionTotals {
 
 export interface TransactionList {
   rows: TransactionRow[];
-  /** Internal transfers (bill payments) are left out. */
+  /** Internal transfers (bill payments) are left out. Card refunds lower `outCents`; they are not income. */
   totals: TransactionTotals;
 }
 
@@ -45,6 +58,11 @@ export async function listTransactions(db: PrismaClient, filters: TransactionFil
     where: {
       date: { gte: toDate(range.start), lt: toDate(range.endExclusive) },
       ...(filters.source ? { account: { source: filters.source } } : {}),
+      ...(filters.category === UNCATEGORIZED
+        ? { categoryId: null, kind: { notIn: ["BILL_PAYMENT", "CARD_PAYMENT_RECEIVED"] } }
+        : filters.category
+          ? { categoryId: filters.category }
+          : {}),
     },
     orderBy: [{ date: "desc" }, { id: "desc" }],
     select: {
@@ -55,8 +73,10 @@ export async function listTransactions(db: PrismaClient, filters: TransactionFil
       amountCents: true,
       installmentNumber: true,
       installmentTotal: true,
+      categorySource: true,
       merchant: { select: { name: true } },
       account: { select: { source: true } },
+      category: { select: { id: true, name: true, color: true } },
     },
   });
 
@@ -73,6 +93,8 @@ export async function listTransactions(db: PrismaClient, filters: TransactionFil
         ? { number: t.installmentNumber, total: t.installmentTotal }
         : null,
     internalTransfer: isInternalTransfer(t.kind),
+    category: t.category,
+    categorySource: t.categorySource,
   }));
 
   const totals = { inCents: 0, outCents: 0, netCents: 0 };
@@ -80,7 +102,7 @@ export async function listTransactions(db: PrismaClient, filters: TransactionFil
     if (row.internalTransfer) {
       continue;
     }
-    if (row.amountCents > 0) {
+    if (row.amountCents > 0 && row.kind !== "CARD_REFUND") {
       totals.inCents += row.amountCents;
     } else {
       totals.outCents += row.amountCents;

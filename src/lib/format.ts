@@ -2,6 +2,7 @@ const LOCALE = "pt-BR";
 
 const currency = new Intl.NumberFormat(LOCALE, { style: "currency", currency: "BRL" });
 const monthAndYear = new Intl.DateTimeFormat(LOCALE, { month: "long", year: "numeric", timeZone: "UTC" });
+const dayOfMonth = new Intl.DateTimeFormat(LOCALE, { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 
 /** -4590 -> "-R$ 45,90" */
 export function formatCents(cents: number): string {
@@ -12,6 +13,11 @@ export function formatCents(cents: number): string {
 export function formatDate(isoDate: string): string {
   const [year, month, day] = isoDate.split("-");
   return `${day}/${month}/${year}`;
+}
+
+/** "2026-01-25" -> "domingo, 25 de janeiro" */
+export function formatDay(isoDate: string): string {
+  return dayOfMonth.format(new Date(`${isoDate}T00:00:00.000Z`));
 }
 
 /** "2026-01" -> "janeiro de 2026" */

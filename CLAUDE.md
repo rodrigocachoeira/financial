@@ -25,6 +25,7 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 - `docker compose up --build`: sobe o app (porta 3000) e o Postgres local (porta 5432)
 - `docker compose exec app yarn test`: roda um comando dentro do container do app
 - Ao mudar dependências: basta reiniciar o app (`docker compose restart app`); o container roda `yarn install` ao subir
+- Se o container mostrar estilo ou código antigo, reinicie o app: a subida limpa o cache `.next`, que já serviu CSS desatualizado
 - `statements/` não é montada no container. Produção roda na Vercel, sem Docker.
 
 ## Documentação (leia antes de mexer na área correspondente)
@@ -39,6 +40,7 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 ## Convenções
 
 - Código, nomes de arquivos, pastas, tabelas e commits em inglês. Texto de `docs/` e da interface em português.
+- Nunca compare transações pelo `FITID` puro: no cartão ele se repete. Use o `externalId` montado pelo leitor (`docs/formats/nubank.md`).
 - Dinheiro é sempre inteiro em centavos (`amountCents`); use `toCents` de `src/lib/money.ts`, nunca `parseFloat`.
 - Testes ficam ao lado do código (`foo.ts` e `foo.test.ts`) e usam os arquivos de `fixtures/`.
 - Regra de negócio fica em `src/lib/`, sem depender de Next.js nem de Prisma, para ser testável isoladamente.
@@ -47,6 +49,14 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 - Páginas protegidas ficam em `src/app/(app)/`, que traz o cabeçalho comum. Leitura de dados fica em um componente assíncrono dentro de `<Suspense>` e começa por `requireSession()`.
 - Datas trafegam como `"AAAA-MM-DD"`; a conversão para `Date` fica em `src/server/dates.ts`. Formatação para a tela em `src/lib/format.ts`.
 - A interface é usada no iPhone: toda tela nova deve funcionar em 375 px de largura, sem rolagem horizontal.
+
+## Interface
+
+- Cores vêm dos tokens de `src/app/globals.css` (`bg-surface`, `text-muted`, `border-border`, `bg-accent`, `text-positive`, `text-negative`, e as variantes `-soft`), com valores para tema claro e escuro. Não use cores fixas do Tailwind (`zinc-*`, `red-*`) nas telas.
+- Botões, cartões, selos e esqueletos usam as classes de `src/components/ui.ts`; ícones vêm de `src/components/icons.tsx`. Não adicione biblioteca de ícones ou de componentes.
+- Listas de escolha usam `SelectMenu` (`src/components/select-menu.tsx`), que abre um menu flutuante no desktop e uma folha inferior no celular. Não use `<select>` nativo: a lista aberta dele não aceita estilo.
+- Toda ação demorada mostra progresso: `Spinner` no botão durante o envio e esqueleto no `fallback` do `<Suspense>`.
+- Entrada de dinheiro em `text-positive`, saída em `text-foreground` com ícone em `negative`, transferência interna em `text-muted`.
 - Funcionalidade nova começa por uma spec em `docs/specs/`.
 
 ## Autenticação
@@ -63,7 +73,9 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 - Todo índice novo precisa de uma consulta que o justifique, registrada na spec.
 - Nunca edite uma migração já aplicada; crie outra. Restrições que o Prisma não declara (como `CHECK`) entram em SQL na migração, com `--create-only`.
 - `prisma`, `@prisma/client` e `@prisma/adapter-pg` ficam fixados na mesma versão estável (hoje 7.10.0). Em 2026-10-11 a tag `latest` do pacote `prisma` apontava para uma versão `8.0.0-rc`; não atualize sem conferir que as três versões coincidem.
-- `yarn test:db` usa o banco `financial_test` e apaga os dados dele a cada teste. Nunca aponte `TEST_DATABASE_URL` para outro banco.
+- `yarn test:db` usa o banco `financial_test` e apaga os dados importados dele a cada teste. Nunca aponte `TEST_DATABASE_URL` para outro banco.
+- Categorias e regras padrão são dados de migração (`-- seed:` no SQL, com `ON CONFLICT DO NOTHING`); os testes não as apagam. Novas categorias ou regras entram por nova migração.
+- Ids vindos do navegador passam por `isUuid` (`src/lib/uuid.ts`) antes de chegar a uma consulta.
 
 ## Privacidade
 

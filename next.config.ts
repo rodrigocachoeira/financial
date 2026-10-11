@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async redirects() {
+    // Until the reports exist, the transaction list is the home page.
+    return [{ source: "/", destination: "/transactions", permanent: false }];
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

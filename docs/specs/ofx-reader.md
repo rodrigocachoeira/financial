@@ -109,7 +109,7 @@ De `docs/domain.md`:
 | Sem bloco de conta nem de cartão | `OfxParseError` |
 | Transação sem `FITID`, `DTPOSTED` ou `TRNAMT` | `OfxParseError` |
 | Data ou valor em formato inválido | `OfxParseError` |
-| `FITID` repetido no mesmo arquivo | `OfxParseError` |
+| `FITID` repetido no mesmo arquivo | aceito: o leitor diferencia as linhas por sufixo (corrigido em 2026-10-11; faturas reais repetem o `FITID` entre compra, IOF, estorno e parcelas) |
 | Arquivo cortado (elemento sem fechamento) | `OfxParseError` (acrescentado na fase 4) |
 | `BANKTRANLIST` sem transações | lista vazia, sem erro |
 | Sem `LEDGERBAL` | saldo e data `null` |

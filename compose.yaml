@@ -3,7 +3,8 @@ services:
   app:
     build: .
     # Installs on every start: the node_modules volume outlives image rebuilds, so it must be synced here.
-    command: sh -c "node .yarn/releases/yarn-*.cjs install --immutable && node .yarn/releases/yarn-*.cjs dev --hostname 0.0.0.0"
+    # Clears the build cache too: Turbopack's cache missed edits made on the Windows side and served stale CSS.
+    command: sh -c "rm -rf .next/* && node .yarn/releases/yarn-*.cjs install --immutable && node .yarn/releases/yarn-*.cjs dev --hostname 0.0.0.0"
     ports:
       - "3000:3000"
     # Auth variables come from .env; the database URLs below override it to reach the db service.

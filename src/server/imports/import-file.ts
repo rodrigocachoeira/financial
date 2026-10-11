@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { uploadErrorMessage, validateUpload } from "@/lib/imports/validate-upload";
 import { decodeOfx, OfxParseError, parseNubankOfx, type ParsedStatement, type Source } from "@/lib/ofx";
+import { applyRules } from "../categorization/apply-rules";
 import type { PrismaClient } from "../prisma";
 import { importStatement } from "./import-statement";
 
@@ -16,7 +17,7 @@ export interface ImportFileResult {
   reason?: string;
 }
 
-/** Validates, decodes, parses, hashes and stores one uploaded file. Never throws for an invalid file. */
+/** Validates, decodes, parses, hashes, stores and categorizes one uploaded file. Never throws for an invalid file. */
 export async function importFile(
   db: PrismaClient,
   file: { name: string; bytes: Uint8Array },
@@ -41,6 +42,8 @@ export async function importFile(
 
   const fileHash = createHash("sha256").update(file.bytes).digest("hex");
   const result = await importStatement(db, { statement, fileName: file.name, fileHash });
+  // Also after a repeated file: rules may have changed since the transactions were stored.
+  await applyRules(db);
 
   return {
     fileName: file.name,

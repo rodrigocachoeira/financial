@@ -11,7 +11,7 @@ Glossário e regras de negócio. Termos em inglês são os nomes usados no códi
 | Transação | `Transaction` | Um lançamento: data, valor, descrição original, identificador externo |
 | Estabelecimento | `Merchant` | Quem recebeu ou enviou o dinheiro, já normalizado |
 | Categoria | `Category` | Classificação do gasto (Alimentação, Transporte, ...) |
-| Regra | `CategoryRule` | Associa um estabelecimento ou padrão de descrição a uma categoria |
+| Regra | `CategoryRule` | Trecho de texto que sugere uma categoria para estabelecimentos ainda sem categoria |
 | Parcela | `Installment` | Posição `n/total` de uma compra parcelada no cartão |
 | Fatura | `Statement` | Conjunto de lançamentos do cartão em um ciclo de cobrança |
 
@@ -25,8 +25,8 @@ Glossário e regras de negócio. Termos em inglês são os nomes usados no códi
 
 ### Duplicidade
 
-- O identificador externo (`FITID` no OFX, `Identificador` no CSV) é único por origem.
-- Importar uma transação cujo identificador já existe naquela origem a ignora. Reimportar um arquivo inteiro não muda nada.
+- A identidade externa de uma transação (`externalId`) é única por conta. Na conta é o `FITID`; no cartão é o `FITID` mais um sufixo, porque o Nubank repete o `FITID` entre parcelas, IOF e estorno da mesma compra (ver `docs/formats/nubank.md`).
+- Importar uma transação cuja identidade já existe naquela conta a ignora. Reimportar um arquivo não duplica nada; se uma versão anterior do leitor deixou linhas de fora, a reimportação as acrescenta.
 
 ### Transferências internas
 
@@ -38,7 +38,8 @@ Glossário e regras de negócio. Termos em inglês são os nomes usados no códi
 
 - Gasto: transação de saída que não é transferência interna.
 - Receita: transação de entrada que não é transferência interna nem estorno.
-- Estorno abate o gasto da categoria da compra original; não é receita.
+- Estorno abate o gasto da categoria da compra original; não é receita. No cartão, todo crédito que não seja pagamento de fatura é estorno (`CARD_REFUND`): estorno de compra, IOF devolvido, desconto.
+- O estorno aponta para o estabelecimento da compra, e o IOF e sua devolução para o estabelecimento `IOF`, de modo que se anulem na mesma categoria.
 
 ### Parcelas
 
@@ -54,9 +55,13 @@ Glossário e regras de negócio. Termos em inglês são os nomes usados no códi
 
 ### Categorização
 
-- Na importação, cada transação recebe a categoria da regra que casar com o estabelecimento; sem regra, fica `Uncategorized`.
-- Quando o usuário corrige a categoria de uma transação, o sistema cria ou atualiza a regra daquele estabelecimento. Importações seguintes já usam a nova regra.
-- Correção manual em uma transação prevalece sobre qualquer regra e não é sobrescrita em reimportações.
+- Prioridade: correção manual na transação, depois a categoria do estabelecimento, depois as regras padrão. Sem nenhuma, a transação fica sem categoria.
+- Regra padrão (`CategoryRule`): um trecho de texto associado a uma categoria. Casa quando alguma palavra do nome do estabelecimento começa pelo trecho (`POSTO` casa com `MP *POSTO CENTRAL`, não com `COMPOSTO`). Com mais de um casamento, vence o trecho mais longo.
+- Regras padrão só valem enquanto o estabelecimento não tem categoria própria.
+- Quando o usuário corrige a categoria de uma transação, o estabelecimento passa a ter aquela categoria, que é aplicada às outras transações dele não corrigidas à mão e às próximas importações.
+- Correção manual em uma transação prevalece sobre qualquer regra e nunca é sobrescrita.
+- Transferências internas não têm categoria.
+- As regras são reaplicadas ao fim de toda importação.
 
 ### Recorrência
 

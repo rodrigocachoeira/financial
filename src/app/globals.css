@@ -1,26 +1,92 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Native controls (select lists, scrollbars) follow the theme. */
+  color-scheme: light dark;
+  --background: #f4f5fa;
+  --surface: #ffffff;
+  --surface-muted: #eef0f7;
+  --foreground: #151826;
+  --muted: #666d82;
+  --border: #e2e5ef;
+  --accent: #6246ea;
+  --accent-hover: #5035d4;
+  --accent-soft: #ebe7ff;
+  --accent-foreground: #ffffff;
+  --positive: #0e8a5f;
+  --positive-soft: #dff5eb;
+  --negative: #d03a4f;
+  --negative-soft: #fde6e9;
+  --warning: #9a5b00;
+  --warning-soft: #fdefd6;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0b0d13;
+    --surface: #141720;
+    --surface-muted: #1c202c;
+    --foreground: #eceef5;
+    --muted: #949bb0;
+    --border: #262b3a;
+    --accent: #7d66f7;
+    --accent-hover: #917dff;
+    --accent-soft: #231e45;
+    --accent-foreground: #ffffff;
+    --positive: #3fcf8e;
+    --positive-soft: #10291f;
+    --negative: #ff6f81;
+    --negative-soft: #33151b;
+    --warning: #f0b24a;
+    --warning-soft: #33260d;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-negative: var(--negative);
+  --color-negative-soft: var(--negative-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --animate-pop-in: pop-in 120ms ease-out;
+  --animate-sheet-in: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-fade-in: fade-in 160ms ease-out;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }

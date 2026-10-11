@@ -9,6 +9,7 @@ export type TransactionKind =
   | "DEBIT_PURCHASE"
   | "BILL_PAYMENT"
   | "CARD_PURCHASE"
+  | "CARD_REFUND"
   | "CARD_PAYMENT_RECEIVED"
   | "OTHER";
 
@@ -18,6 +19,10 @@ export interface Installment {
 }
 
 export interface ParsedTransaction {
+  /**
+   * Identity of the transaction within its account. Starts with the FITID, which Nubank
+   * repeats across related card entries, so a suffix tells them apart (see `buildExternalId`).
+   */
   externalId: string;
   /** YYYY-MM-DD */
   date: string;
@@ -63,6 +68,11 @@ const ACCOUNT_KINDS: [prefix: string, kind: TransactionKind][] = [
 const CARD_PAYMENT_RECEIVED = "Pagamento recebido";
 const PART_SEPARATOR = " - ";
 const INSTALLMENT_SUFFIX = / - Parcela (\d+)\/(\d+)$/;
+// Card entries derived from another one. They reuse the FITID of the purchase they refer to.
+const IOF_CHARGE = /^IOF de "(.+)"$/;
+const IOF_REFUND = /^IOF de volta de /;
+const PURCHASE_REFUND = /^Estorno de "(.+?)"/;
+const IOF_MERCHANT = "IOF";
 // Pix descriptions: kind, counterparty name, document, institution.
 const PIX_PARTS = 4;
 
@@ -100,9 +110,13 @@ function normalizeMerchant(text: string | undefined): string | null {
   return normalized || null;
 }
 
-function classify(source: Source, description: string): TransactionKind {
+function classify(source: Source, description: string, amountCents: number): TransactionKind {
   if (source === "CREDIT_CARD") {
-    return description.startsWith(CARD_PAYMENT_RECEIVED) ? "CARD_PAYMENT_RECEIVED" : "CARD_PURCHASE";
+    if (description.startsWith(CARD_PAYMENT_RECEIVED)) {
+      return "CARD_PAYMENT_RECEIVED";
+    }
+    // Any other credit on the card gives back money already spent: refunds, returned IOF, discounts.
+    return amountCents > 0 ? "CARD_REFUND" : "CARD_PURCHASE";
   }
   return ACCOUNT_KINDS.find(([prefix]) => description.startsWith(prefix))?.[1] ?? "OTHER";
 }
@@ -129,22 +143,72 @@ function extractMerchant(kind: TransactionKind, description: string, installment
       return separator === -1 ? null : normalizeMerchant(description.slice(separator + PART_SEPARATOR.length));
     }
     case "CARD_PURCHASE":
+      if (IOF_CHARGE.test(description)) {
+        return IOF_MERCHANT;
+      }
       return normalizeMerchant(installment ? description.replace(INSTALLMENT_SUFFIX, "") : description);
+    case "CARD_REFUND":
+      if (IOF_REFUND.test(description)) {
+        return IOF_MERCHANT;
+      }
+      // A refund points at the merchant of the purchase, so it lowers that merchant's spending.
+      return normalizeMerchant(PURCHASE_REFUND.exec(description)?.[1] ?? description);
     default:
       return null;
   }
 }
 
+/**
+ * Nubank's FITID identifies a purchase, not a statement line: every installment of a purchase,
+ * its IOF charge and its refund all carry the purchase's FITID. The suffix makes each line unique
+ * and is derived from the line alone, so the same line gets the same id in any file.
+ */
+function buildExternalId(fitId: string, source: Source, description: string, installment: Installment | null): string {
+  if (source !== "CREDIT_CARD") {
+    return fitId;
+  }
+  if (installment) {
+    return `${fitId}#p${installment.number}/${installment.total}`;
+  }
+  if (IOF_CHARGE.test(description)) {
+    return `${fitId}#iof`;
+  }
+  if (PURCHASE_REFUND.test(description)) {
+    return `${fitId}#refund`;
+  }
+  return fitId;
+}
+
 function parseTransaction(node: OfxNode, position: number, source: Source): ParsedTransaction {
   const where = `transaction ${position}`;
-  const externalId = requiredValue(node, "FITID", where);
+  const fitId = requiredValue(node, "FITID", where);
   const date = parseDate(requiredValue(node, "DTPOSTED", where), "DTPOSTED", where);
   const amountCents = parseAmount(requiredValue(node, "TRNAMT", where), "TRNAMT", where);
   const description = child(node, "MEMO")?.value ?? "";
-  const kind = classify(source, description);
+  const kind = classify(source, description, amountCents);
   const installment = kind === "CARD_PURCHASE" ? parseInstallment(description) : null;
   const merchant = extractMerchant(kind, description, installment);
+  const externalId = buildExternalId(fitId, source, description, installment);
   return { externalId, date, amountCents, description, kind, merchant, installment };
+}
+
+/**
+ * Last resort for lines that still share an id after `buildExternalId` (a pattern not seen yet):
+ * tell them apart by date and amount, then by order. Keeps the file importable instead of rejecting it.
+ */
+function disambiguate(transactions: ParsedTransaction[]): ParsedTransaction[] {
+  const seen = new Set<string>();
+  return transactions.map((transaction) => {
+    let externalId = transaction.externalId;
+    if (seen.has(externalId)) {
+      externalId = `${transaction.externalId}#${transaction.date}:${transaction.amountCents}`;
+    }
+    for (let copy = 2; seen.has(externalId); copy += 1) {
+      externalId = `${transaction.externalId}#${transaction.date}:${transaction.amountCents}#${copy}`;
+    }
+    seen.add(externalId);
+    return externalId === transaction.externalId ? transaction : { ...transaction, externalId };
+  });
 }
 
 /** Parses the text of a Nubank OFX export (account or credit card). */
@@ -176,15 +240,9 @@ export function parseNubankOfx(content: string): ParsedStatement {
   const periodStart = parseDate(requiredValue(list, "DTSTART", "statement"), "DTSTART", "statement");
   const periodEnd = parseDate(requiredValue(list, "DTEND", "statement"), "DTEND", "statement");
 
-  const seen = new Set<string>();
-  const transactions = children(list, "STMTTRN").map((node, index) => {
-    const transaction = parseTransaction(node, index + 1, source);
-    if (seen.has(transaction.externalId)) {
-      throw new OfxParseError(`Repeated FITID in transaction ${index + 1}`);
-    }
-    seen.add(transaction.externalId);
-    return transaction;
-  });
+  const transactions = disambiguate(
+    children(list, "STMTTRN").map((node, index) => parseTransaction(node, index + 1, source)),
+  );
 
   const balance = child(statement, "LEDGERBAL");
   const ledgerBalanceCents = balance

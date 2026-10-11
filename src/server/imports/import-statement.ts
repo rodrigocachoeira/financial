@@ -11,7 +11,7 @@ export interface ImportInput {
 
 export interface ImportResult {
   importId: string;
-  /** The same file had already been imported into this account; nothing was stored. */
+  /** The same file had already been imported into this account and nothing new was stored. */
   alreadyImported: boolean;
   transactionCount: number;
   newTransactionCount: number;
@@ -39,28 +39,21 @@ export function importStatement(db: PrismaClient, input: ImportInput): Promise<I
     const existing = await tx.import.findUnique({
       where: { accountId_fileHash: { accountId: account.id, fileHash } },
     });
-    if (existing) {
-      return {
-        importId: existing.id,
-        alreadyImported: true,
-        transactionCount: existing.transactionCount,
-        newTransactionCount: 0,
-      };
-    }
-
-    const created = await tx.import.create({
-      data: {
-        accountId: account.id,
-        fileName,
-        fileHash,
-        periodStart: toDate(statement.periodStart),
-        periodEnd: toDate(statement.periodEnd),
-        ledgerBalanceCents: statement.ledgerBalanceCents,
-        ledgerBalanceDate: statement.ledgerBalanceDate ? toDate(statement.ledgerBalanceDate) : null,
-        transactionCount: transactions.length,
-        newTransactionCount: 0,
-      },
-    });
+    const target =
+      existing ??
+      (await tx.import.create({
+        data: {
+          accountId: account.id,
+          fileName,
+          fileHash,
+          periodStart: toDate(statement.periodStart),
+          periodEnd: toDate(statement.periodEnd),
+          ledgerBalanceCents: statement.ledgerBalanceCents,
+          ledgerBalanceDate: statement.ledgerBalanceDate ? toDate(statement.ledgerBalanceDate) : null,
+          transactionCount: transactions.length,
+          newTransactionCount: 0,
+        },
+      }));
 
     const merchantNames = [...new Set(transactions.flatMap((t) => (t.merchant ? [t.merchant] : [])))];
     await tx.merchant.createMany({ data: merchantNames.map((name) => ({ name })), skipDuplicates: true });
@@ -73,7 +66,7 @@ export function importStatement(db: PrismaClient, input: ImportInput): Promise<I
     const { count } = await tx.transaction.createMany({
       data: transactions.map((t) => ({
         accountId: account.id,
-        importId: created.id,
+        importId: target.id,
         externalId: t.externalId,
         date: toDate(t.date),
         amountCents: t.amountCents,
@@ -86,11 +79,15 @@ export function importStatement(db: PrismaClient, input: ImportInput): Promise<I
       skipDuplicates: true,
     });
 
-    await tx.import.update({ where: { id: created.id }, data: { newTransactionCount: count } });
+    // A repeated file normally adds nothing. It does when an earlier version of the reader
+    // missed lines of it, and then those lines are stored now.
+    if (count > 0) {
+      await tx.import.update({ where: { id: target.id }, data: { newTransactionCount: { increment: count } } });
+    }
 
     return {
-      importId: created.id,
-      alreadyImported: false,
+      importId: target.id,
+      alreadyImported: existing !== null && count === 0,
       transactionCount: transactions.length,
       newTransactionCount: count,
     };

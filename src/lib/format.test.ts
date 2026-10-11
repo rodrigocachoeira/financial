@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCents, formatDate, formatMonth, parseMonth } from "./format";
+import { formatCents, formatDate, formatDay, formatMonth, parseMonth } from "./format";
 
 // Intl uses a non-breaking space after the currency symbol.
 const plain = (text: string) => text.replace(/ /g, " ");
@@ -20,6 +20,13 @@ describe("formatDate", () => {
   it("formats an ISO date as DD/MM/YYYY", () => {
     expect(formatDate("2026-01-05")).toBe("05/01/2026");
     expect(formatDate("2026-12-31")).toBe("31/12/2026");
+  });
+});
+
+describe("formatDay", () => {
+  it("formats weekday, day and month in Portuguese", () => {
+    expect(formatDay("2026-01-25")).toBe("domingo, 25 de janeiro");
+    expect(formatDay("2026-03-02")).toBe("segunda-feira, 2 de março");
   });
 });
 

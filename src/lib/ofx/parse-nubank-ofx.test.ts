@@ -124,6 +124,81 @@ describe("parseNubankOfx: credit card statement", () => {
   });
 });
 
+describe("parseNubankOfx: card entries that share a FITID", () => {
+  const { transactions } = parseNubankOfx(fixture("credit-card-related-entries.ofx"));
+  const byDescription = (description: string) => transactions.find((t) => t.description === description)!;
+
+  it("gives every line its own id", () => {
+    expect(transactions).toHaveLength(9);
+    expect(new Set(transactions.map((t) => t.externalId)).size).toBe(9);
+  });
+
+  it("identifies a purchase and its IOF", () => {
+    expect(byDescription("Software Exemplo Inc")).toMatchObject({
+      externalId: "33333333-cccc-4ccc-8ccc-000000000001",
+      kind: "CARD_PURCHASE",
+      merchant: "SOFTWARE EXEMPLO INC",
+    });
+    expect(byDescription('IOF de "Software Exemplo Inc"')).toMatchObject({
+      externalId: "33333333-cccc-4ccc-8ccc-000000000001#iof",
+      kind: "CARD_PURCHASE",
+      merchant: "IOF",
+      amountCents: -420,
+    });
+  });
+
+  it("treats returned IOF as a refund of IOF", () => {
+    expect(byDescription("IOF de volta de Software Exemplo Inc")).toMatchObject({
+      externalId: "33333333-cccc-4ccc-8ccc-000000000002",
+      kind: "CARD_REFUND",
+      merchant: "IOF",
+      amountCents: 420,
+    });
+  });
+
+  it("points a refund at the merchant of the purchase", () => {
+    expect(byDescription("Mp *Viagemexemplo")).toMatchObject({
+      externalId: "33333333-cccc-4ccc-8ccc-000000000003",
+      kind: "CARD_PURCHASE",
+      merchant: "MP *VIAGEMEXEMPLO",
+    });
+    expect(byDescription('Estorno de "Mp *Viagemexemplo" (Viagem Exemplo Turismo)')).toMatchObject({
+      externalId: "33333333-cccc-4ccc-8ccc-000000000003#refund",
+      kind: "CARD_REFUND",
+      merchant: "MP *VIAGEMEXEMPLO",
+      amountCents: 18930,
+      installment: null,
+    });
+  });
+
+  it("identifies each installment of a purchase", () => {
+    expect(byDescription("ELETRONICOSEXEMPLO*1PRODUTO - Parcela 11/12").externalId).toBe(
+      "22222222-bbbb-4bbb-8bbb-000000000005#p11/12",
+    );
+    expect(byDescription("ELETRONICOSEXEMPLO*1PRODUTO - Parcela 12/12").externalId).toBe(
+      "22222222-bbbb-4bbb-8bbb-000000000005#p12/12",
+    );
+  });
+
+  it("gives an installment a different id from the previous month's", () => {
+    const january = parseNubankOfx(cardOfx).transactions.find((t) => t.installment?.number === 2)!;
+    const february = byDescription("MP *LOJAEXEMPLO - Parcela 3/10");
+    expect(january.externalId).toBe("22222222-bbbb-4bbb-8bbb-000000000002#p2/10");
+    expect(february.externalId).toBe("22222222-bbbb-4bbb-8bbb-000000000002#p3/10");
+    expect(february.merchant).toBe(january.merchant);
+  });
+
+  it("treats any other card credit as a refund, and never an account credit", () => {
+    const credit = cardOfx.replace("<TRNAMT>-39.90</TRNAMT>", "<TRNAMT>39.90</TRNAMT>");
+    expect(parseNubankOfx(credit).transactions[2]).toMatchObject({ kind: "CARD_REFUND", merchant: "STREAMING EXEMPLO" });
+    expect(parseNubankOfx(accountOfx).transactions.some((t) => t.kind === "CARD_REFUND")).toBe(false);
+  });
+
+  it("is not an internal transfer", () => {
+    expect(isInternalTransfer("CARD_REFUND")).toBe(false);
+  });
+});
+
 describe("isInternalTransfer", () => {
   it("is true only for bill payment kinds", () => {
     expect(isInternalTransfer("BILL_PAYMENT")).toBe(true);
@@ -190,9 +265,24 @@ describe("parseNubankOfx: edge cases", () => {
     expect(() => parseNubankOfx(accountOfx.replace(from, to))).toThrow(OfxParseError);
   });
 
-  it("rejects a repeated FITID", () => {
+  it("keeps lines that share a FITID in an unknown way, telling them apart by date and amount", () => {
     const ofx = accountOfx.replace("000000000002", "000000000001");
-    expect(() => parseNubankOfx(ofx)).toThrow(OfxParseError);
+    const ids = parseNubankOfx(ofx).transactions.map((t) => t.externalId);
+    expect(ids.slice(0, 2)).toEqual([
+      "11111111-aaaa-4aaa-8aaa-000000000001",
+      "11111111-aaaa-4aaa-8aaa-000000000001#2026-01-06:-4590",
+    ]);
+    expect(new Set(ids).size).toBe(5);
+  });
+
+  it("tells identical lines apart by order", () => {
+    const [, first] = /(<STMTTRN>[\s\S]*?<\/STMTTRN>\n)/.exec(accountOfx)!;
+    const ids = parseNubankOfx(accountOfx.replace(first, first + first + first)).transactions.map((t) => t.externalId);
+    expect(ids.slice(0, 3)).toEqual([
+      "11111111-aaaa-4aaa-8aaa-000000000001",
+      "11111111-aaaa-4aaa-8aaa-000000000001#2026-01-05:500000",
+      "11111111-aaaa-4aaa-8aaa-000000000001#2026-01-05:500000#2",
+    ]);
   });
 
   it("never puts the description in error messages", () => {
@@ -228,7 +318,8 @@ describe("parseNubankOfx: edge cases", () => {
     });
     expect(parseNubankOfx(withoutTag(cardOfx, "MEMO")).transactions[0]).toMatchObject({
       description: "",
-      kind: "CARD_PURCHASE",
+      // The first card line is a credit; without a memo it cannot be told from a refund.
+      kind: "CARD_REFUND",
       merchant: null,
     });
   });

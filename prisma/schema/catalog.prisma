@@ -17,10 +17,28 @@ model Merchant {
 model Category {
   id        String   @id @default(uuid(7)) @db.Uuid
   name      String   @unique
+  /// Hex color for badges and charts.
+  color     String
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   merchants    Merchant[]
   transactions Transaction[]
+  rules        CategoryRule[]
 
   @@map("categories")
+}
+
+/// Text fragment that, when contained in a merchant name, suggests a category.
+/// Applies only while the merchant has no category of its own.
+model CategoryRule {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  /// Upper case, trimmed.
+  pattern    String   @unique
+  categoryId String   @map("category_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@map("category_rules")
 }
