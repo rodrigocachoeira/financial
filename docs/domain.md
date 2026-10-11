@@ -48,7 +48,7 @@ Glossário e regras de negócio. Termos em inglês são os nomes usados no códi
 
 ### Estabelecimento
 
-- No cartão: a descrição sem o sufixo de parcela e sem o prefixo do intermediador (`XX *`).
+- No cartão: a descrição sem o sufixo de parcela. O prefixo do intermediador (`MP *`, `IFD *`) é mantido pelo leitor; tratá-lo é assunto da categorização (fase 5).
 - Na conta: o nome da contraparte no Pix, ou o estabelecimento da compra no débito.
 - A normalização (maiúsculas, espaços, prefixos) existe para que a mesma loja caia sempre na mesma regra.
 

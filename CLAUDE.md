@@ -13,6 +13,7 @@ O gerenciador de pacotes é o Yarn 4 (fixado em `.yarn/releases`). Não use `npm
 - `yarn typecheck`: checagem de tipos
 - `yarn lint`: ESLint
 - `yarn build`: build de produção
+- `yarn ofx:summary <arquivo.ofx>`: totais de um OFX, sem exibir descrições (para o autor conferir arquivos reais)
 
 Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `yarn lint`.
 
