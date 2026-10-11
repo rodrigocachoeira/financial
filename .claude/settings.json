@@ -5,6 +5,8 @@
       "Bash(yarn typecheck:*)",
       "Bash(yarn lint:*)",
       "Bash(yarn build:*)",
+      "Bash(yarn test:db:*)",
+      "Bash(yarn db:generate:*)",
       "Bash(docker compose exec app yarn test:*)",
       "Bash(docker compose exec app yarn typecheck:*)",
       "Bash(docker compose exec app yarn lint:*)",

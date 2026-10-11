@@ -5,6 +5,7 @@ out/
 dist/
 coverage/
 *.tsbuildinfo
+src/generated/
 next-env.d.ts
 .vercel
 

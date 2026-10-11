@@ -1,0 +1,40 @@
+/// A bank account or credit card at an institution. Owns transactions.
+model Account {
+  id          String      @id @default(uuid(7)) @db.Uuid
+  institution Institution
+  source      Source
+  /// ACCTID from the statement file.
+  externalId  String      @map("external_id")
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  imports      Import[]
+  transactions Transaction[]
+
+  @@unique([institution, source, externalId])
+  @@map("accounts")
+}
+
+/// One uploaded statement file.
+model Import {
+  id                  String    @id @default(uuid(7)) @db.Uuid
+  accountId           String    @map("account_id") @db.Uuid
+  fileName            String    @map("file_name")
+  /// SHA-256 of the file, hex encoded.
+  fileHash            String    @map("file_hash")
+  periodStart         DateTime  @map("period_start") @db.Date
+  periodEnd           DateTime  @map("period_end") @db.Date
+  ledgerBalanceCents  Int?      @map("ledger_balance_cents")
+  ledgerBalanceDate   DateTime? @map("ledger_balance_date") @db.Date
+  /// Transactions in the file.
+  transactionCount    Int       @map("transaction_count")
+  /// Transactions actually stored (not seen in earlier imports).
+  newTransactionCount Int       @map("new_transaction_count")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  account      Account       @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+
+  @@unique([accountId, fileHash])
+  @@index([accountId, periodStart])
+  @@map("imports")
+}

@@ -1,0 +1,34 @@
+model Transaction {
+  id                String          @id @default(uuid(7)) @db.Uuid
+  accountId         String          @map("account_id") @db.Uuid
+  /// First import that brought this transaction.
+  importId          String          @map("import_id") @db.Uuid
+  /// FITID from the statement file; unique per account.
+  externalId        String          @map("external_id")
+  date              DateTime        @db.Date
+  /// Negative for money going out.
+  amountCents       Int             @map("amount_cents")
+  /// Original statement text, never altered.
+  description       String
+  kind              TransactionKind
+  merchantId        String?         @map("merchant_id") @db.Uuid
+  /// Both null, or 1 <= number <= total (CHECK constraint in the init migration).
+  installmentNumber Int?            @map("installment_number") @db.SmallInt
+  installmentTotal  Int?            @map("installment_total") @db.SmallInt
+  categoryId        String?         @map("category_id") @db.Uuid
+  categorySource    CategorySource? @map("category_source")
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  account  Account   @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  import   Import    @relation(fields: [importId], references: [id], onDelete: Restrict)
+  merchant Merchant? @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@unique([accountId, externalId])
+  @@index([date])
+  @@index([categoryId, date])
+  @@index([merchantId, date])
+  @@index([importId])
+  @@map("transactions")
+}

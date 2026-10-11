@@ -6,6 +6,7 @@ services:
       - "3000:3000"
     environment:
       DATABASE_URL: postgresql://financial:financial@db:5432/financial
+      TEST_DATABASE_URL: postgresql://financial:financial@db:5432/financial_test
       # File events do not cross the Windows bind mount; poll instead.
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"

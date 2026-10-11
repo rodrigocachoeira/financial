@@ -20,10 +20,13 @@ docker compose exec app yarn test
 
 ## Como rodar sem Docker
 
-Requer Node.js 24 e Yarn (a versão do projeto está fixada em `.yarn/releases`).
+Requer Node.js 24 e Yarn (a versão do projeto está fixada em `.yarn/releases`). O banco continua vindo do Docker.
 
 ```bash
+cp .env.example .env
+docker compose up -d db
 yarn install
+yarn db:deploy
 yarn dev
 ```
 
@@ -36,6 +39,9 @@ yarn dev
 | `yarn typecheck` | checagem de tipos |
 | `yarn lint` | ESLint |
 | `yarn build` | build de produção |
+| `yarn test:db` | testes de banco (exige o container `db`) |
+| `yarn db:migrate --name <nome>` | cria e aplica uma migração local |
+| `yarn db:studio` | abre o Prisma Studio para ver os dados |
 
 ## Estrutura
 
@@ -43,6 +49,8 @@ yarn dev
 |---|---|
 | `src/app/` | páginas e rotas da API (Next.js App Router) |
 | `src/lib/` | regras de negócio, sem dependência de framework |
+| `src/server/` | acesso ao banco de dados |
+| `prisma/` | schema e migrações |
 | `fixtures/` | extratos sintéticos usados nos testes |
 | `docs/` | produto, domínio, formatos, decisões e roadmap |
 | `statements/` | extratos reais, fora do git e fora do container |

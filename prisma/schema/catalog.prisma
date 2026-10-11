@@ -1,0 +1,26 @@
+/// Normalized merchant or counterparty. Its category is the default for new transactions.
+model Merchant {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  /// Normalized by the statement reader (trimmed, single spaces, upper case).
+  name       String   @unique
+  categoryId String?  @map("category_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  transactions Transaction[]
+
+  @@index([categoryId])
+  @@map("merchants")
+}
+
+model Category {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  merchants    Merchant[]
+  transactions Transaction[]
+
+  @@map("categories")
+}

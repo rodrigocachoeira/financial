@@ -1,0 +1,23 @@
+enum Institution {
+  NUBANK
+}
+
+enum Source {
+  ACCOUNT
+  CREDIT_CARD
+}
+
+enum TransactionKind {
+  PIX_SENT
+  PIX_RECEIVED
+  DEBIT_PURCHASE
+  BILL_PAYMENT
+  CARD_PURCHASE
+  CARD_PAYMENT_RECEIVED
+  OTHER
+}
+
+enum CategorySource {
+  RULE
+  MANUAL
+}

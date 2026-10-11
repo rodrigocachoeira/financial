@@ -7,5 +7,7 @@ export default defineConfig({
   },
   test: {
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    // Database tests need Postgres; they run with `yarn test:db`.
+    exclude: ["src/**/*.db.test.ts", "node_modules/**"],
   },
 });
