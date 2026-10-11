@@ -48,6 +48,14 @@ Glossário e regras de negócio. Termos em inglês são os nomes usados no códi
 - O extrato da conta informa um rendimento líquido por arquivo, para o período inteiro. Não é receita nem entra no saldo; é mostrado à parte.
 - O rendimento de um mês vem do extrato mais completo daquele mês. Valores de extratos diferentes nunca são somados, e um extrato que cobre mais de um mês não é dividido.
 
+### Saldo da conta
+
+- O saldo de um mês é o saldo final do extrato da conta com a data mais recente naquele mês. Não é calculado a partir das transações.
+
+### Comparação com a média
+
+- Uma categoria é comparada com a média dos três meses anteriores que tenham algum gasto. Está fora do padrão quando supera a média em R$ 50 ou mais e em pelo menos 25%.
+
 ### Parcelas
 
 - Uma compra parcelada aparece como uma transação por fatura, com o sufixo ` - Parcela n/total`.
@@ -75,6 +83,7 @@ Glossário e regras de negócio. Termos em inglês são os nomes usados no códi
 ### Recorrência
 
 - Gasto recorrente: mesmo estabelecimento com gasto em três ou mais meses-calendário seguidos, o último sendo o mês de referência ou o anterior, e cada mês dentro de 20% da mediana. Parcelas não são recorrência.
+- O custo anual de uma recorrência é projetado pelo preço da última cobrança. Diferença de 5% ou mais entre as duas últimas cobranças é tratada como mudança de preço.
 
 ## Privacidade
 

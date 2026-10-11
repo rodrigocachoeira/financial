@@ -122,6 +122,11 @@ async function Transactions({ searchParams }: Pick<PageProps<"/transactions">, "
       : undefined;
   const { rows, totals } = await listTransactions(getDb(), { month, source, category });
   const monthOptions = months.includes(month) ? months : [month, ...months].sort().reverse();
+  const exportParams = new URLSearchParams({
+    period: month,
+    ...(source ? { account: source } : {}),
+    ...(category ? { category } : {}),
+  });
 
   return (
     <div className="flex flex-col gap-5">
@@ -163,8 +168,14 @@ async function Transactions({ searchParams }: Pick<PageProps<"/transactions">, "
               </ul>
             </section>
           ))}
-          <p className="bg-surface-muted/40 px-4 py-2 text-center text-xs text-muted">
-            {rows.length} {rows.length === 1 ? "transação" : "transações"} em {formatMonth(month)}
+          <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-surface-muted/40 px-4 py-2 text-xs text-muted">
+            <span>
+              {rows.length} {rows.length === 1 ? "transação" : "transações"} em {formatMonth(month)}
+            </span>
+            {/* A plain link: the browser downloads the file the route returns. */}
+            <a href={`/api/export/transactions?${exportParams}`} className="font-medium text-accent hover:underline">
+              Exportar CSV
+            </a>
           </p>
         </div>
       )}

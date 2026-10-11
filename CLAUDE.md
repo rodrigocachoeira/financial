@@ -41,7 +41,9 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 
 - Código, nomes de arquivos, pastas, tabelas e commits em inglês. Texto de `docs/` e da interface em português.
 - O que conta como gasto ou receita é decidido só em `src/lib/reports/amounts.ts`. Relatórios e totais usam essas funções; não refaça a regra em consultas ou componentes.
-- Cálculos de relatório são funções puras em `src/lib/reports/` sobre as linhas de `loadReportRows`.
+- Cálculos de relatório são funções puras em `src/lib/reports/` sobre as linhas de `loadReportRows` (mês) ou `loadYearRows` (ano). Prefira as versões para qualquer conjunto de linhas (`summarize`, `categoryBreakdown`, `merchantRanking`).
+- Os relatórios têm três visões em abas (`/reports`, `/reports/year`, `/reports/subscriptions`); as peças comuns ficam em `src/app/(app)/reports/parts.tsx`. Visão nova entra como aba, não como item do cabeçalho.
+- Arquivos para download saem de rotas em `src/app/api/export/`, que chamam `getSession()` e respondem com `Cache-Control: no-store`. CSV é gerado por `toCsv` (`src/lib/export/csv.ts`), que neutraliza fórmulas.
 - Nunca compare transações pelo `FITID` puro: no cartão ele se repete. Use o `externalId` montado pelo leitor (`docs/formats/nubank.md`).
 - Dinheiro é sempre inteiro em centavos (`amountCents`); use `toCents` de `src/lib/money.ts`, nunca `parseFloat`.
 - Testes ficam ao lado do código (`foo.ts` e `foo.test.ts`) e usam os arquivos de `fixtures/`.

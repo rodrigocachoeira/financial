@@ -5,12 +5,16 @@ import { niceCeiling, type MonthSpending } from "@/lib/reports/reports";
 const TICKS = [1, 0.5, 0];
 
 /**
- * Spending per month as columns. One series, so no legend: the selected month wears the accent
- * and the others step back. Each column links to its month; values are in the tooltip, on the
- * selected column and in a table for screen readers.
+ * Spending per month as columns. One series, so no legend. With a selected month, it wears the
+ * accent and the others step back; without one, every column is in the accent. Each column links
+ * to its month; values are in the tooltip, on one labelled column and in a table for screen readers.
  */
-export function EvolutionChart({ months, selected }: { months: MonthSpending[]; selected: string }) {
-  const max = niceCeiling(Math.max(...months.map((entry) => entry.spentCents)));
+export function EvolutionChart({ months, selected }: { months: MonthSpending[]; selected: string | null }) {
+  const highest = Math.max(...months.map((entry) => entry.spentCents));
+  const max = niceCeiling(highest);
+  // Label one column only: the selected month, or else the highest.
+  const labelled = selected ?? months.find((entry) => entry.spentCents === highest && highest > 0)?.month ?? null;
+  const dense = months.length > 8;
 
   return (
     <figure>
@@ -36,7 +40,8 @@ export function EvolutionChart({ months, selected }: { months: MonthSpending[]; 
 
           <ul className="absolute inset-0 flex">
             {months.map((entry, index) => {
-              const current = entry.month === selected;
+              const current = entry.month === labelled;
+              const emphasized = selected === null || entry.month === selected;
               // The value label is centered on its column, except at the edges, where it would leave the plot.
               const anchor =
                 index === 0
@@ -51,13 +56,15 @@ export function EvolutionChart({ months, selected }: { months: MonthSpending[]; 
                     href={`/reports?month=${entry.month}`}
                     scroll={false}
                     aria-label={`${formatMonth(entry.month)}: ${formatCents(entry.spentCents)}`}
-                    aria-current={current ? "true" : undefined}
+                    aria-current={entry.month === selected ? "true" : undefined}
                     className="group relative flex h-full flex-col items-center rounded-lg outline-none transition-colors hover:bg-surface-muted/60 focus-visible:bg-surface-muted/60 focus-visible:ring-2 focus-visible:ring-accent"
                   >
                     <span className="relative mt-5 flex w-full flex-1 items-end justify-center">
                       <span
                         className={`relative w-6 max-w-[60%] rounded-t transition-colors ${
-                          current ? "bg-accent" : "bg-muted/40 group-hover:bg-muted/60 group-focus-visible:bg-muted/60"
+                          emphasized
+                            ? "bg-accent group-hover:opacity-85 group-focus-visible:opacity-85"
+                            : "bg-muted/40 group-hover:bg-muted/60 group-focus-visible:bg-muted/60"
                         }`}
                         style={{ height: `${height}%`, minHeight: entry.spentCents > 0 ? 2 : 0 }}
                       >
@@ -73,7 +80,9 @@ export function EvolutionChart({ months, selected }: { months: MonthSpending[]; 
                       </span>
                     </span>
                     <span
-                      className={`flex h-6 items-center text-xs ${current ? "font-semibold text-foreground" : "text-muted"}`}
+                      className={`flex h-6 items-center ${dense ? "text-[10px]" : "text-xs"} ${
+                        entry.month === selected ? "font-semibold text-foreground" : "text-muted"
+                      }`}
                     >
                       {formatShortMonth(entry.month)}
                     </span>

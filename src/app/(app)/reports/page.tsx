@@ -1,92 +1,42 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense, type ReactNode } from "react";
+import { Suspense } from "react";
 import { ArrowDownLeftIcon, ArrowUpRightIcon, SwapIcon, TrendingUpIcon, UploadIcon } from "@/components/icons";
 import { badge, buttonPrimary, card, skeleton } from "@/components/ui";
+import { balanceEvolution, type MonthBalance } from "@/lib/reports/balance";
 import { formatCents, formatDate, formatMonth, formatPercent, parseMonth } from "@/lib/format";
 import { buildInsightsPayload } from "@/lib/insights/payload";
 import { buildInsightsPrompt } from "@/lib/insights/prompt";
-import { addMonths } from "@/lib/reports/months";
+import { addMonths, addMonthsToDate } from "@/lib/reports/months";
 import {
   futureInstallments,
   monthlyEvolution,
   monthSummary,
   RECURRING_MIN_MONTHS,
   recurringSpending,
-  spendingByCategory,
   spendingChange,
+  spendingVsAverage,
   topMerchants,
-  type CategorySpending,
   type FutureInstallments,
-  type MerchantSpending,
   type RecurringSpending,
-  type ReportCategory,
 } from "@/lib/reports/reports";
 import { hasMultiMonthStatement, yieldEvolution, type MonthYield } from "@/lib/reports/yield";
 import { requireSession } from "@/server/auth/session";
 import { getDb } from "@/server/db";
+import { loadBalanceSources } from "@/server/reports/load-balance-sources";
 import { loadReportRows } from "@/server/reports/load-report-rows";
 import { loadYieldSources } from "@/server/reports/load-yield-sources";
 import { listMonths } from "@/server/transactions/list-transactions";
 import { EvolutionChart } from "./evolution-chart";
 import { InsightsCard } from "./insights-card";
 import { MonthSelect } from "./month-select";
+import { CategoryBars, CategoryLabel, Empty, MerchantList, MonthBarList, Section, Tile } from "./parts";
 
 export const metadata: Metadata = { title: "Relatórios | Financial" };
 
 const EVOLUTION_MONTHS = 6;
 const TOP_MERCHANTS = 10;
 const INSTALLMENT_MONTHS = 12;
-
-function Section(props: { title: string; description?: string; children: ReactNode }) {
-  return (
-    <section className={`${card} flex flex-col gap-4 p-4 sm:p-5`}>
-      <div>
-        <h2 className="text-base font-semibold tracking-tight">{props.title}</h2>
-        {props.description && <p className="mt-0.5 text-sm text-muted">{props.description}</p>}
-      </div>
-      {props.children}
-    </section>
-  );
-}
-
-const Empty = ({ children }: { children: ReactNode }) => <p className="text-sm text-muted">{children}</p>;
-
-function CategoryLabel({ category }: { category: ReportCategory | null }) {
-  return (
-    <span className="flex min-w-0 items-center gap-2">
-      <span
-        className={`size-2.5 shrink-0 rounded-full ${category ? "" : "border-2 border-dashed border-muted"}`}
-        style={category ? { backgroundColor: category.color } : undefined}
-        aria-hidden="true"
-      />
-      <span className="truncate">{category?.name ?? "Sem categoria"}</span>
-    </span>
-  );
-}
-
-function Tile(props: {
-  label: string;
-  /** Null shows a dash: there is no figure for the month. */
-  cents: number | null;
-  tone: string;
-  icon: ReactNode;
-  className?: string;
-  children?: ReactNode;
-}) {
-  return (
-    <div className={`${card} flex min-w-0 flex-col gap-1.5 p-3 sm:p-4 ${props.className ?? ""}`}>
-      <dt className="flex items-center gap-1.5 text-xs font-medium text-muted">
-        <span className={`grid size-5 shrink-0 place-items-center rounded-full text-xs ${props.tone}`}>{props.icon}</span>
-        {props.label}
-      </dt>
-      <dd className={`truncate text-lg font-semibold sm:text-xl ${props.cents === null ? "text-muted" : ""}`}>
-        {props.cents === null ? "—" : formatCents(props.cents)}
-      </dd>
-      {props.children}
-    </div>
-  );
-}
 
 function SpendingDelta({ change, previousMonth }: { change: number | null; previousMonth: string }) {
   if (change === null) {
@@ -106,68 +56,6 @@ function SpendingDelta({ change, previousMonth }: { change: number | null; previ
         {more ? "a mais" : "a menos"} que {previous}
       </span>
     </p>
-  );
-}
-
-function CategoryBars({ categories, month }: { categories: CategorySpending[]; month: string }) {
-  if (categories.length === 0) {
-    return <Empty>Nenhum gasto neste mês.</Empty>;
-  }
-  const max = Math.max(...categories.map((entry) => entry.spentCents));
-
-  return (
-    <ul className="flex flex-col">
-      {categories.map((entry) => (
-        <li key={entry.category?.id ?? "none"}>
-          <Link
-            href={`/transactions?month=${month}&category=${entry.category?.id ?? "none"}`}
-            className="group -mx-2 flex flex-col gap-1.5 rounded-lg px-2 py-2 transition-colors hover:bg-surface-muted/60 focus-visible:outline-2 focus-visible:outline-accent"
-          >
-            <span className="flex items-baseline justify-between gap-3 text-sm">
-              <span className="min-w-0 font-medium">
-                <CategoryLabel category={entry.category} />
-              </span>
-              <span className="flex shrink-0 items-baseline gap-2 tabular-nums">
-                <span className="font-semibold">{formatCents(entry.spentCents)}</span>
-                <span className="w-9 text-right text-xs text-muted">{formatPercent(entry.share)}</span>
-              </span>
-            </span>
-            <span
-              className="h-2 min-w-1 rounded-r bg-accent transition-opacity group-hover:opacity-85"
-              style={{ width: `${(entry.spentCents / max) * 100}%` }}
-              aria-hidden="true"
-            />
-          </Link>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function MerchantList({ merchants }: { merchants: MerchantSpending[] }) {
-  if (merchants.length === 0) {
-    return <Empty>Nenhum gasto com estabelecimento identificado neste mês.</Empty>;
-  }
-  return (
-    <ol className="flex flex-col divide-y divide-border">
-      {merchants.map((entry, index) => (
-        <li key={entry.merchant} className="flex items-center gap-3 py-2.5">
-          <span className="w-5 shrink-0 text-right text-xs tabular-nums text-muted">{index + 1}</span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium" title={entry.merchant}>
-              {entry.merchant}
-            </p>
-            <p className="mt-0.5 flex items-center gap-2 text-xs text-muted">
-              <CategoryLabel category={entry.category} />
-              <span className="shrink-0">
-                · {entry.transactionCount} {entry.transactionCount === 1 ? "compra" : "compras"}
-              </span>
-            </p>
-          </div>
-          <p className="shrink-0 text-sm font-semibold tabular-nums">{formatCents(entry.spentCents)}</p>
-        </li>
-      ))}
-    </ol>
   );
 }
 
@@ -194,7 +82,7 @@ function RecurringList({ recurring }: { recurring: RecurringSpending[] }) {
             </p>
           </div>
           <p className="shrink-0 text-right text-sm font-semibold tabular-nums">
-            {formatCents(entry.averageCents)}
+            {formatCents(entry.lastCents)}
             <span className="text-xs font-normal text-muted">/mês</span>
             <span className="block text-xs font-normal text-muted">{formatCents(entry.yearlyCents)} por ano</span>
           </p>
@@ -261,6 +149,7 @@ function Installments({ installments }: { installments: FutureInstallments }) {
 }
 
 const dayAndMonth = (isoDate: string) => formatDate(isoDate).slice(0, 5);
+const lastDayOfMonth = (month: string) => addMonthsToDate(`${month}-31`, 0);
 
 function YieldNote({ entry }: { entry: MonthYield }) {
   if (entry.cents === null) {
@@ -279,7 +168,6 @@ function YieldList({ months, multiMonth }: { months: MonthYield[]; multiMonth: b
       </Empty>
     );
   }
-  const max = Math.max(...known.map((entry) => entry.cents!), 1);
   const total = known.reduce((sum, entry) => sum + entry.cents!, 0);
 
   return (
@@ -290,36 +178,53 @@ function YieldList({ months, multiMonth }: { months: MonthYield[]; multiMonth: b
           em {known.length} {known.length === 1 ? "mês" : "meses"} com extrato
         </span>
       </p>
-      <ul className="flex flex-col gap-2">
-        {months.map((entry) => (
-          <li key={entry.month} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3 text-sm">
-            <span className="text-muted">
-              {formatMonth(entry.month).split(" ")[0].slice(0, 3)}/{entry.month.slice(2, 4)}
-            </span>
-            <span className="flex h-2 items-stretch" aria-hidden="true">
-              {entry.cents !== null && entry.cents > 0 && (
-                <span className="min-w-1 rounded-r bg-accent" style={{ width: `${(entry.cents / max) * 100}%` }} />
-              )}
-            </span>
-            {entry.cents === null ? (
-              <span className="text-xs text-muted">sem extrato</span>
-            ) : (
-              <span className="text-right font-medium tabular-nums">
-                {formatCents(entry.cents)}
-                {entry.partialUntil && (
-                  <span className="block text-xs font-normal text-muted">até {dayAndMonth(entry.partialUntil)}</span>
-                )}
-              </span>
-            )}
-          </li>
-        ))}
-      </ul>
+      <MonthBarList
+        missing="sem extrato"
+        months={months.map((entry) => ({
+          month: entry.month,
+          cents: entry.cents,
+          note: entry.partialUntil ? `até ${dayAndMonth(entry.partialUntil)}` : null,
+        }))}
+      />
       {multiMonth && (
         <p className="text-xs text-muted">
           Há um extrato que cobre mais de um mês. O banco informa um único valor para o período inteiro, então ele não
           entra aqui; exporte um extrato por mês.
         </p>
       )}
+    </div>
+  );
+}
+
+function BalanceList({ months }: { months: MonthBalance[] }) {
+  const known = months.filter((entry) => entry.cents !== null);
+  if (known.length === 0) {
+    return <Empty>Nenhum extrato da conta importado neste período.</Empty>;
+  }
+  const latest = known.at(-1)!;
+  const first = known[0];
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-sm">
+        <span className="text-xl font-semibold">{formatCents(latest.cents!)}</span>{" "}
+        <span className="text-muted">em {formatDate(latest.date!)}</span>
+        {known.length > 1 && (
+          <span className="block text-xs text-muted">
+            {latest.cents! >= first.cents! ? "▲" : "▼"} {formatCents(Math.abs(latest.cents! - first.cents!))} desde{" "}
+            {formatDate(first.date!)}
+          </span>
+        )}
+      </p>
+      <MonthBarList
+        missing="sem extrato"
+        months={months.map((entry) => ({
+          month: entry.month,
+          cents: entry.cents,
+          // The balance of a statement that stops mid-month is not the month's closing balance.
+          note: entry.date && entry.date !== lastDayOfMonth(entry.month) ? `em ${dayAndMonth(entry.date)}` : null,
+        }))}
+      />
     </div>
   );
 }
@@ -351,7 +256,11 @@ async function Reports({ searchParams }: Pick<PageProps<"/reports">, "searchPara
 
   const month = typeof params.month === "string" && parseMonth(params.month) ? params.month : months[0];
   const monthOptions = months.includes(month) ? months : [month, ...months].sort().reverse();
-  const [rows, yieldSources] = await Promise.all([loadReportRows(getDb(), month), loadYieldSources(getDb())]);
+  const [rows, yieldSources, balanceSources] = await Promise.all([
+    loadReportRows(getDb(), month),
+    loadYieldSources(getDb()),
+    loadBalanceSources(getDb()),
+  ]);
   const summary = monthSummary(rows, month);
   const yields = yieldEvolution(yieldSources, month, EVOLUTION_MONTHS);
   const monthYield = yields.at(-1)!;
@@ -396,8 +305,15 @@ async function Reports({ searchParams }: Pick<PageProps<"/reports">, "searchPara
         monthName={monthName}
       />
 
-      <Section title="Gasto por categoria" description={`Para onde foi o dinheiro em ${monthName}.`}>
-        <CategoryBars categories={spendingByCategory(rows, month)} month={month} />
+      <Section
+        title="Gasto por categoria"
+        description={`Para onde foi o dinheiro em ${monthName}, comparado com a média dos meses anteriores.`}
+      >
+        <CategoryBars
+          categories={spendingVsAverage(rows, month)}
+          empty="Nenhum gasto neste mês."
+          hrefFor={(category) => `/transactions?month=${month}&category=${category?.id ?? "none"}`}
+        />
       </Section>
 
       <Section title="Evolução" description={`Gasto total nos ${EVOLUTION_MONTHS} meses até ${monthName}.`}>
@@ -405,15 +321,30 @@ async function Reports({ searchParams }: Pick<PageProps<"/reports">, "searchPara
       </Section>
 
       <Section title="Maiores estabelecimentos" description={`Onde você mais gastou em ${monthName}.`}>
-        <MerchantList merchants={topMerchants(rows, month, TOP_MERCHANTS)} />
+        <MerchantList
+          merchants={topMerchants(rows, month, TOP_MERCHANTS)}
+          empty="Nenhum gasto com estabelecimento identificado neste mês."
+        />
       </Section>
 
-      <Section title="Recorrentes" description="Cobranças que se repetem todo mês, como assinaturas.">
+      <Section
+        title="Recorrentes"
+        description="Cobranças que se repetem todo mês, como assinaturas."
+        action={
+          <Link href="/reports/subscriptions" className="shrink-0 text-sm font-medium text-accent hover:underline">
+            Ver detalhes
+          </Link>
+        }
+      >
         <RecurringList recurring={recurringSpending(rows, month)} />
       </Section>
 
       <Section title="Parcelas futuras" description={`O que já está comprometido depois de ${monthName}.`}>
         <Installments installments={futureInstallments(rows, month, INSTALLMENT_MONTHS)} />
+      </Section>
+
+      <Section title="Saldo da conta" description="Saldo ao fim de cada extrato da conta importado.">
+        <BalanceList months={balanceEvolution(balanceSources, month, EVOLUTION_MONTHS)} />
       </Section>
 
       <Section
@@ -452,14 +383,8 @@ function ReportsSkeleton() {
 
 export default function ReportsPage({ searchParams }: PageProps<"/reports">) {
   return (
-    <>
-      <div className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight">Relatórios</h1>
-        <p className="mt-1 text-sm text-muted">Onde está indo a maior parte do seu dinheiro.</p>
-      </div>
-      <Suspense fallback={<ReportsSkeleton />}>
-        <Reports searchParams={searchParams} />
-      </Suspense>
-    </>
+    <Suspense fallback={<ReportsSkeleton />}>
+      <Reports searchParams={searchParams} />
+    </Suspense>
   );
 }

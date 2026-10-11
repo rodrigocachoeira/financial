@@ -18,6 +18,8 @@ Cada fase termina em algo verificável. Uma fase só começa com a spec escrita 
 
 - Criar e gerenciar categorias (`docs/specs/category-management.md`): feita em 2026-10-11.
 - Rendimento da conta nos relatórios (`docs/specs/account-yield.md`): feita em 2026-10-11.
+- Recorrentes, saldo da conta, comparação com a média, exportação CSV e visão anual (`docs/specs/quick-wins.md`): feitas em 2026-10-11.
+- Propostas ainda não iniciadas: orçamento por categoria, fila de revisão com busca, previsão do mês.
 
 ## Pendências fora das fases
 

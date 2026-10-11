@@ -169,7 +169,18 @@ describe("recurringSpending", () => {
   it("finds a merchant charged three months in a row", () => {
     const rows = monthly("STREAMING", ["2026-01", "2026-02", "2026-03"], -3990, { category: FOOD });
     expect(recurringSpending(rows, "2026-03")).toEqual([
-      { merchant: "STREAMING", category: FOOD, months: 3, averageCents: 3990, lastCents: 3990, yearlyCents: 47880 },
+      {
+        merchant: "STREAMING",
+        category: FOOD,
+        months: 3,
+        averageCents: 3990,
+        lastCents: 3990,
+        previousCents: 3990,
+        priceChange: 0,
+        lastDate: "2026-03-10",
+        nextDate: "2026-04-10",
+        yearlyCents: 47880,
+      },
     ]);
   });
 

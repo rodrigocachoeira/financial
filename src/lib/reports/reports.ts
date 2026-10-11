@@ -1,6 +1,6 @@
 import type { Installment } from "../ofx";
 import { incomeCents, isReportable, spentCents, type CountedAmount } from "./amounts";
-import { addMonths, monthOf, monthsEndingAt } from "./months";
+import { addMonths, addMonthsToDate, monthOf, monthsEndingAt } from "./months";
 
 export interface ReportCategory {
   id: string;
@@ -42,12 +42,19 @@ export interface MonthSummary {
   netCents: number;
 }
 
-export function monthSummary(rows: ReportRow[], month: string): MonthSummary {
-  const monthRows = inMonth(rows, month);
-  const spent = sum(monthRows.map(spentCents));
-  const income = sum(monthRows.map(incomeCents));
+/** Spending, income and what is left, over any set of rows (a month, a year). */
+export function summarize(rows: ReportRow[]): MonthSummary {
+  const spent = sum(rows.map(spentCents));
+  const income = sum(rows.map(incomeCents));
   return { spentCents: spent, incomeCents: income, netCents: income - spent };
 }
+
+export function monthSummary(rows: ReportRow[], month: string): MonthSummary {
+  return summarize(inMonth(rows, month));
+}
+
+/** The rows of one calendar year ("2026"). */
+export const inYear = (rows: ReportRow[], year: string) => rows.filter((row) => row.date.startsWith(year + "-"));
 
 /** Change of spending against the previous month, as a fraction; null when there is nothing to compare with. */
 export function spendingChange(rows: ReportRow[], month: string): number | null {
@@ -69,11 +76,10 @@ export interface CategorySpending {
 const UNCATEGORIZED = "";
 
 /** Largest first, uncategorized last. Categories whose refunds cover their purchases are left out. */
-export function spendingByCategory(rows: ReportRow[], month: string): CategorySpending[] {
-  const monthRows = inMonth(rows, month);
-  const total = sum(monthRows.map(spentCents));
+export function categoryBreakdown(rows: ReportRow[]): CategorySpending[] {
+  const total = sum(rows.map(spentCents));
 
-  return [...groupBy(monthRows, (row) => row.category?.id ?? UNCATEGORIZED).values()]
+  return [...groupBy(rows, (row) => row.category?.id ?? UNCATEGORIZED).values()]
     .map((group) => ({ category: group[0].category, spentCents: sum(group.map(spentCents)) }))
     .filter((entry) => entry.spentCents > 0)
     .map((entry) => ({ ...entry, share: total > 0 ? entry.spentCents / total : 0 }))
@@ -83,6 +89,54 @@ export function spendingByCategory(rows: ReportRow[], month: string): CategorySp
         b.spentCents - a.spentCents ||
         (a.category?.name ?? "").localeCompare(b.category?.name ?? ""),
     );
+}
+
+export function spendingByCategory(rows: ReportRow[], month: string): CategorySpending[] {
+  return categoryBreakdown(inMonth(rows, month));
+}
+
+export interface CategoryComparison extends CategorySpending {
+  /** Average spending of the category over the earlier months that have data; null without any. */
+  averageCents: number | null;
+  /** Fraction above (positive) or below the average; null when there is no average to compare with. */
+  deviation: number | null;
+  /** Well above the usual: worth a look. */
+  unusual: boolean;
+}
+
+export const COMPARISON_MONTHS = 3;
+const UNUSUAL_DEVIATION = 0.25;
+const UNUSUAL_MIN_DIFFERENCE_CENTS = 5000;
+
+/**
+ * The month's spending by category against the average of the previous `lookback` months.
+ * Months without any spending have no statement imported, so they do not pull the average down.
+ */
+export function spendingVsAverage(rows: ReportRow[], month: string, lookback = COMPARISON_MONTHS): CategoryComparison[] {
+  const earlier = monthsEndingAt(addMonths(month, -1), lookback)
+    .map((earlierMonth) => inMonth(rows, earlierMonth))
+    .filter((monthRows) => sum(monthRows.map(spentCents)) > 0);
+  const totals = new Map<string, number>();
+  for (const monthRows of earlier) {
+    for (const entry of categoryBreakdown(monthRows)) {
+      const key = entry.category?.id ?? UNCATEGORIZED;
+      totals.set(key, (totals.get(key) ?? 0) + entry.spentCents);
+    }
+  }
+
+  return spendingByCategory(rows, month).map((entry) => {
+    if (earlier.length === 0) {
+      return { ...entry, averageCents: null, deviation: null, unusual: false };
+    }
+    const averageCents = Math.round((totals.get(entry.category?.id ?? UNCATEGORIZED) ?? 0) / earlier.length);
+    const difference = entry.spentCents - averageCents;
+    return {
+      ...entry,
+      averageCents,
+      deviation: averageCents > 0 ? difference / averageCents : null,
+      unusual: difference >= UNUSUAL_MIN_DIFFERENCE_CENTS && difference >= averageCents * UNUSUAL_DEVIATION,
+    };
+  });
 }
 
 export interface MonthSpending {
@@ -107,8 +161,9 @@ export interface MerchantSpending {
   spentCents: number;
 }
 
-export function topMerchants(rows: ReportRow[], month: string, limit: number): MerchantSpending[] {
-  const withMerchant = inMonth(rows, month).filter((row) => row.merchant !== null && isReportable(row));
+/** Merchants by net spending over any set of rows; rows without a merchant are ignored. */
+export function merchantRanking(rows: ReportRow[], limit: number): MerchantSpending[] {
+  const withMerchant = rows.filter((row) => row.merchant !== null && isReportable(row));
 
   return [...groupBy(withMerchant, (row) => row.merchant!).entries()]
     .map(([merchant, group]) => ({
@@ -122,6 +177,10 @@ export function topMerchants(rows: ReportRow[], month: string, limit: number): M
     .slice(0, limit);
 }
 
+export function topMerchants(rows: ReportRow[], month: string, limit: number): MerchantSpending[] {
+  return merchantRanking(inMonth(rows, month), limit);
+}
+
 export interface RecurringSpending {
   merchant: string;
   category: ReportCategory | null;
@@ -130,6 +189,14 @@ export interface RecurringSpending {
   averageCents: number;
   /** Charge of the most recent month. */
   lastCents: number;
+  /** Charge of the month before that one. */
+  previousCents: number;
+  /** Fraction by which the last charge differs from the previous one; positive is a price increase. */
+  priceChange: number;
+  /** Day of the most recent charge, YYYY-MM-DD. */
+  lastDate: string;
+  /** One month after the last charge: when the next one is expected. */
+  nextDate: string;
   yearlyCents: number;
 }
 
@@ -160,6 +227,8 @@ export function recurringSpending(rows: ReportRow[], endMonth: string): Recurrin
     for (let month = last; run.length < HISTORY_MONTHS && spentIn(month) > 0; month = addMonths(month, -1)) {
       run.push(spentIn(month));
     }
+    // The run is built backwards, so its first month is the most recent one with a charge.
+    const lastMonth = last;
     if (run.length < RECURRING_MIN_MONTHS) {
       continue;
     }
@@ -170,13 +239,21 @@ export function recurringSpending(rows: ReportRow[], endMonth: string): Recurrin
 
     const averageCents = Math.round(sum(run) / run.length);
     const latestRow = group.reduce((latest, row) => (row.date > latest.date ? row : latest));
+    const lastDate = (byMonth.get(lastMonth) ?? [])
+      .filter((row) => spentCents(row) > 0)
+      .reduce((latest, row) => (row.date > latest ? row.date : latest), "");
     result.push({
       merchant,
       category: latestRow.category,
       months: run.length,
       averageCents,
       lastCents: run[0],
-      yearlyCents: averageCents * 12,
+      previousCents: run[1],
+      priceChange: (run[0] - run[1]) / run[1],
+      lastDate,
+      nextDate: addMonthsToDate(lastDate, 1),
+      // What it costs in a year at the current price.
+      yearlyCents: run[0] * 12,
     });
   }
 

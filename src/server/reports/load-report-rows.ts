@@ -18,10 +18,21 @@ export async function loadReportRows(db: PrismaClient, month: string): Promise<R
   if (!first || !last) {
     return [];
   }
+  return loadRowsBetween(db, first.start, last.endExclusive);
+}
 
+/** The transactions of one calendar year ("2026"), for the yearly report. */
+export async function loadYearRows(db: PrismaClient, year: string): Promise<ReportRow[]> {
+  if (!/^\d{4}$/.test(year)) {
+    return [];
+  }
+  return loadRowsBetween(db, `${year}-01-01`, `${Number(year) + 1}-01-01`);
+}
+
+async function loadRowsBetween(db: PrismaClient, start: string, endExclusive: string): Promise<ReportRow[]> {
   const transactions = await db.transaction.findMany({
     where: {
-      date: { gte: toDate(first.start), lt: toDate(last.endExclusive) },
+      date: { gte: toDate(start), lt: toDate(endExclusive) },
       kind: { notIn: ["BILL_PAYMENT", "CARD_PAYMENT_RECEIVED"] },
     },
     orderBy: [{ date: "asc" }, { id: "asc" }],

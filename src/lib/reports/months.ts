@@ -12,3 +12,15 @@ export function addMonths(month: string, count: number): string {
 export function monthsEndingAt(endMonth: string, count: number): string[] {
   return Array.from({ length: count }, (_, index) => addMonths(endMonth, index - count + 1));
 }
+
+/** The twelve months of a year ("2026"), January first. */
+export const monthsOfYear = (year: string) => monthsEndingAt(year + "-12", 12);
+
+/** addMonthsToDate("2026-01-31", 1) -> "2026-02-28": same day of another month, clamped to its last day. */
+export function addMonthsToDate(isoDate: string, count: number): string {
+  const month = addMonths(monthOf(isoDate), count);
+  const [year, monthNumber] = month.split("-").map(Number);
+  const lastDay = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
+  const day = Math.min(Number(isoDate.slice(8, 10)), lastDay);
+  return month + "-" + String(day).padStart(2, "0");
+}

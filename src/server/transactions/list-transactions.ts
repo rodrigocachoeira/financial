@@ -5,7 +5,7 @@ import { toDate, toIsoDate } from "../dates";
 import type { PrismaClient } from "../prisma";
 
 export interface TransactionFilters {
-  /** YYYY-MM */
+  /** YYYY-MM for one month, or YYYY for a whole year. */
   month: string;
   source?: Source;
   /** A category id, or "none" for transactions still waiting for a category. */
@@ -52,9 +52,11 @@ export interface TransactionList {
   totals: TransactionTotals;
 }
 
-/** Transactions of one month, newest first, with the totals of what is listed. */
+/** Transactions of one month or year, newest first, with the totals of what is listed. */
 export async function listTransactions(db: PrismaClient, filters: TransactionFilters): Promise<TransactionList> {
-  const range = parseMonth(filters.month);
+  const range = /^\d{4}$/.test(filters.month)
+    ? { start: `${filters.month}-01-01`, endExclusive: `${Number(filters.month) + 1}-01-01` }
+    : parseMonth(filters.month);
   if (!range) {
     return { rows: [], totals: { inCents: 0, outCents: 0, netCents: 0 } };
   }
