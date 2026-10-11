@@ -14,6 +14,10 @@ Cada fase termina em algo verificável. Uma fase só começa com a spec escrita 
 | 7 | Dicas geradas por IA com dados agregados | spec define o que é enviado ao serviço | próxima |
 | 8 | PWA | instalar no iPhone pela tela de início | |
 
+## Melhorias fora das fases
+
+- Criar e gerenciar categorias (`docs/specs/category-management.md`): feita em 2026-10-11.
+
 ## Pendências fora das fases
 
 - Criar contas na Vercel e no Neon (necessárias a partir da fase 2).

@@ -57,7 +57,8 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 - Cores vêm dos tokens de `src/app/globals.css` (`bg-surface`, `text-muted`, `border-border`, `bg-accent`, `text-positive`, `text-negative`, e as variantes `-soft`), com valores para tema claro e escuro. Não use cores fixas do Tailwind (`zinc-*`, `red-*`) nas telas.
 - Botões, cartões, selos e esqueletos usam as classes de `src/components/ui.ts`; ícones vêm de `src/components/icons.tsx`. Não adicione biblioteca de ícones ou de componentes.
 - Gráficos são HTML e CSS próprios, sem biblioteca: uma cor só (o destaque) para magnitude, cor de categoria apenas como bolinha ao lado do nome, texto sempre nos tokens de texto, e uma tabela `sr-only` com os mesmos números.
-- Listas de escolha usam `SelectMenu` (`src/components/select-menu.tsx`), que abre um menu flutuante no desktop e uma folha inferior no celular. Não use `<select>` nativo: a lista aberta dele não aceita estilo.
+- Listas de escolha usam `SelectMenu` (`src/components/select-menu.tsx`), que abre um menu flutuante no desktop e uma folha inferior no celular, com busca opcional (`searchable`) e criação a partir do texto digitado (`onCreate`). Não use `<select>` nativo: a lista aberta dele não aceita estilo.
+- Modais usam `Dialog` (`src/components/dialog.tsx`), sobre o `<dialog>` nativo. Campos de texto têm fonte de 16 px no celular, para o iOS não dar zoom ao focar.
 - Toda ação demorada mostra progresso: `Spinner` no botão durante o envio e esqueleto no `fallback` do `<Suspense>`.
 - Entrada de dinheiro em `text-positive`, saída em `text-foreground` com ícone em `negative`, transferência interna em `text-muted`.
 - Funcionalidade nova começa por uma spec em `docs/specs/`.
@@ -77,7 +78,8 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 - Nunca edite uma migração já aplicada; crie outra. Restrições que o Prisma não declara (como `CHECK`) entram em SQL na migração, com `--create-only`.
 - `prisma`, `@prisma/client` e `@prisma/adapter-pg` ficam fixados na mesma versão estável (hoje 7.10.0). Em 2026-10-11 a tag `latest` do pacote `prisma` apontava para uma versão `8.0.0-rc`; não atualize sem conferir que as três versões coincidem.
 - `yarn test:db` usa o banco `financial_test` e apaga os dados importados dele a cada teste. Nunca aponte `TEST_DATABASE_URL` para outro banco.
-- Categorias e regras padrão são dados de migração (`-- seed:` no SQL, com `ON CONFLICT DO NOTHING`); os testes não as apagam. Novas categorias ou regras entram por nova migração.
+- Categorias e regras padrão iniciais são dados de migração (`-- seed:` no SQL, com `ON CONFLICT DO NOTHING`); o usuário também cria e apaga categorias pela interface. Os testes de banco não apagam as categorias semeadas e removem as que criarem.
+- Nomes de categoria são comparados com `searchKey` (`src/lib/categorization/category-name.ts`), que ignora acentos, maiúsculas e espaçamento. Toda escrita em categorias passa por `src/server/categorization/manage-categories.ts`.
 - Ids vindos do navegador passam por `isUuid` (`src/lib/uuid.ts`) antes de chegar a uma consulta.
 
 ## Privacidade

@@ -90,6 +90,42 @@ export const LogOutIcon = (props: IconProps) => (
   </Icon>
 );
 
+export const PlusIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M12 5v14" />
+    <path d="M5 12h14" />
+  </Icon>
+);
+
+export const SearchIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="m20 20-3.5-3.5" />
+  </Icon>
+);
+
+export const PencilIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M4 20h4L19 9l-4-4L4 16z" />
+    <path d="m13.5 6.5 4 4" />
+  </Icon>
+);
+
+export const TrashIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M4 7h16" />
+    <path d="M9 7V4h6v3" />
+    <path d="M6 7l1 13h10l1-13" />
+  </Icon>
+);
+
+export const ArrowLeftIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M19 12H5" />
+    <path d="m11 6-6 6 6 6" />
+  </Icon>
+);
+
 export const ChevronDownIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="m6 9 6 6 6-6" />

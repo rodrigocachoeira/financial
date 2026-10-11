@@ -12,6 +12,7 @@ export function FilterSelect(props: {
   value: string;
   options: SelectOption[];
   className?: string;
+  searchable?: boolean;
   onChange: (value: string) => void;
 }) {
   const current = props.options.find((option) => option.value === props.value);
@@ -25,6 +26,7 @@ export function FilterSelect(props: {
         value={props.value}
         options={props.options}
         onChange={props.onChange}
+        searchable={props.searchable}
         triggerClassName={FIELD}
       >
         <span className="flex min-w-0 items-center gap-2">

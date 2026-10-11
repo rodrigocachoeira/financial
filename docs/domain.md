@@ -63,6 +63,8 @@ Glossário e regras de negócio. Termos em inglês são os nomes usados no códi
 - Quando o usuário corrige a categoria de uma transação, o estabelecimento passa a ter aquela categoria, que é aplicada às outras transações dele não corrigidas à mão e às próximas importações.
 - Correção manual em uma transação prevalece sobre qualquer regra e nunca é sobrescrita.
 - Transferências internas não têm categoria.
+- O usuário cria, renomeia e apaga categorias. Dois nomes são a mesma categoria quando coincidem ignorando acentos, maiúsculas e espaçamento.
+- Apagar uma categoria devolve suas transações e estabelecimentos a "sem categoria", inclusive as corrigidas à mão.
 - As regras são reaplicadas ao fim de toda importação.
 
 ### Recorrência

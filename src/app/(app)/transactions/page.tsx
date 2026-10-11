@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { ArrowDownLeftIcon, ArrowUpRightIcon, SwapIcon, UploadIcon } from "@/components/icons";
-import { badge, buttonPrimary, card, skeleton } from "@/components/ui";
+import { badge, buttonPrimary, buttonSecondary, card, skeleton } from "@/components/ui";
 import { formatCents, formatDay, formatMonth, parseMonth } from "@/lib/format";
 import type { Source } from "@/lib/ofx";
 import { isUuid } from "@/lib/uuid";
@@ -203,9 +203,14 @@ function TransactionsSkeleton() {
 export default function TransactionsPage({ searchParams }: PageProps<"/transactions">) {
   return (
     <>
-      <div className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight">Transações</h1>
-        <p className="mt-1 text-sm text-muted">Lançamentos da conta e do cartão no mês selecionado.</p>
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Transações</h1>
+          <p className="mt-1 text-sm text-muted">Lançamentos da conta e do cartão no mês selecionado.</p>
+        </div>
+        <Link href="/categories" className={`${buttonSecondary} shrink-0`}>
+          Categorias
+        </Link>
       </div>
       <Suspense fallback={<TransactionsSkeleton />}>
         <Transactions searchParams={searchParams} />

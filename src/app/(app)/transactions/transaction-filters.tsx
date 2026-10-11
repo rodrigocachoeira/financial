@@ -56,6 +56,7 @@ export function TransactionFilters({ months, categories, ...current }: Props) {
       <FilterSelect
         label="Categoria"
         className="col-span-2"
+        searchable
         value={current.category}
         options={categoryOptions}
         onChange={(category) => update({ category })}
