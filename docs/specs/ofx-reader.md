@@ -110,6 +110,7 @@ De `docs/domain.md`:
 | Transação sem `FITID`, `DTPOSTED` ou `TRNAMT` | `OfxParseError` |
 | Data ou valor em formato inválido | `OfxParseError` |
 | `FITID` repetido no mesmo arquivo | `OfxParseError` |
+| Arquivo cortado (elemento sem fechamento) | `OfxParseError` (acrescentado na fase 4) |
 | `BANKTRANLIST` sem transações | lista vazia, sem erro |
 | Sem `LEDGERBAL` | saldo e data `null` |
 | `MEMO` ausente | `description: ""`, `kind` padrão da origem, `merchant: null` |

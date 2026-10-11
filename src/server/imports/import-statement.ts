@@ -1,4 +1,5 @@
 import type { ParsedStatement } from "@/lib/ofx";
+import { toDate } from "../dates";
 import type { PrismaClient } from "../prisma";
 
 export interface ImportInput {
@@ -18,8 +19,6 @@ export interface ImportResult {
 
 // The only statement reader so far is the Nubank one.
 const INSTITUTION = "NUBANK";
-
-const toDate = (isoDate: string) => new Date(`${isoDate}T00:00:00.000Z`);
 
 /**
  * Stores a parsed statement atomically. Transactions already known to the

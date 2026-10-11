@@ -149,9 +149,13 @@ function parseTransaction(node: OfxNode, position: number, source: Source): Pars
 
 /** Parses the text of a Nubank OFX export (account or credit card). */
 export function parseNubankOfx(content: string): ParsedStatement {
-  const ofx = child(parseSgml(content), "OFX");
+  const { root, unclosed } = parseSgml(content);
+  const ofx = child(root, "OFX");
   if (!ofx) {
     throw new OfxParseError("Not an OFX file: missing OFX element");
+  }
+  if (unclosed.length > 0) {
+    throw new OfxParseError(`Incomplete file: ${unclosed.at(-1)} is not closed`);
   }
 
   const accountStatement = descendant(ofx, "BANKMSGSRSV1", "STMTTRNRS", "STMTRS");

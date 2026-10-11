@@ -14,9 +14,10 @@ function decodeEntities(value: string): string {
 
 /**
  * Builds a tree from OFX 1.x SGML. Value tags may or may not be closed;
- * aggregates are always closed.
+ * aggregates are always closed. `unclosed` lists aggregates left open, which
+ * means the file was cut short.
  */
-export function parseSgml(content: string): OfxNode {
+export function parseSgml(content: string): { root: OfxNode; unclosed: string[] } {
   const root: OfxNode = { name: "", value: "", children: [] };
   const stack: OfxNode[] = [root];
 
@@ -35,7 +36,7 @@ export function parseSgml(content: string): OfxNode {
       stack.push(node);
     }
   }
-  return root;
+  return { root, unclosed: stack.slice(1).map((node) => node.name) };
 }
 
 export function child(node: OfxNode, name: string): OfxNode | undefined {

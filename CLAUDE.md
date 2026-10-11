@@ -43,6 +43,10 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 - Testes ficam ao lado do código (`foo.ts` e `foo.test.ts`) e usam os arquivos de `fixtures/`.
 - Regra de negócio fica em `src/lib/`, sem depender de Next.js nem de Prisma, para ser testável isoladamente.
 - Código que acessa o banco fica em `src/server/` e recebe o `PrismaClient` por parâmetro; `src/lib/` nunca importa Prisma.
+- Páginas e server actions obtêm o cliente com `getDb()` (`src/server/db.ts`), dentro da função, nunca no topo do módulo: o build precisa passar sem `DATABASE_URL`.
+- Páginas protegidas ficam em `src/app/(app)/`, que traz o cabeçalho comum. Leitura de dados fica em um componente assíncrono dentro de `<Suspense>` e começa por `requireSession()`.
+- Datas trafegam como `"AAAA-MM-DD"`; a conversão para `Date` fica em `src/server/dates.ts`. Formatação para a tela em `src/lib/format.ts`.
+- A interface é usada no iPhone: toda tela nova deve funcionar em 375 px de largura, sem rolagem horizontal.
 - Funcionalidade nova começa por uma spec em `docs/specs/`.
 
 ## Autenticação

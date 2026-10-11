@@ -47,7 +47,7 @@ yarn dev
 
 | Pasta | Conteúdo |
 |---|---|
-| `src/app/` | páginas e rotas da API (Next.js App Router) |
+| `src/app/` | páginas e rotas da API (Next.js App Router); as telas protegidas ficam em `src/app/(app)/` |
 | `src/lib/` | regras de negócio, sem dependência de framework |
 | `src/server/` | acesso ao banco de dados |
 | `prisma/` | schema e migrações |

@@ -168,6 +168,10 @@ describe("parseNubankOfx: edge cases", () => {
     expect(() => parseNubankOfx(content)).toThrow(OfxParseError);
   });
 
+  it.each([900, 1400, accountOfx.length - 10])("rejects a file cut short at %i characters", (length) => {
+    expect(() => parseNubankOfx(accountOfx.slice(0, length))).toThrow(/Incomplete file/);
+  });
+
   it("rejects a file with neither account nor card block", () => {
     const ofx = accountOfx.replace(/<BANKMSGSRSV1>[\s\S]*<\/BANKMSGSRSV1>\n/, "");
     expect(() => parseNubankOfx(ofx)).toThrow(OfxParseError);
