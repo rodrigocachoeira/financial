@@ -84,6 +84,8 @@ Antes de dar uma tarefa por concluída, rode `yarn test`, `yarn typecheck` e `ya
 
 ## Privacidade
 
+- Tudo o que pode sair do aplicativo para uma IA passa por `buildInsightsPayload` (`src/lib/insights/payload.ts`). Campo novo ali exige um caso no teste "what leaves the application". Dados financeiros nunca vão em URL.
+
 - Nunca leia, copie ou cite arquivos de `statements/`: são extratos reais. Para entender um formato, use `fixtures/` ou peça uma amostra mascarada.
 - Descrições de transações contêm nome e CPF/CNPJ de terceiros: não colocar em logs nem em mensagens de erro.
 

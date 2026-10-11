@@ -126,6 +126,28 @@ export const ArrowLeftIcon = (props: IconProps) => (
   </Icon>
 );
 
+export const SparklesIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z" />
+    <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" />
+  </Icon>
+);
+
+export const CopyIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="9" y="9" width="11" height="11" rx="2" />
+    <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+  </Icon>
+);
+
+export const ExternalLinkIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M14 5h5v5" />
+    <path d="M19 5 10 14" />
+    <path d="M12 6H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-5" />
+  </Icon>
+);
+
 export const ChevronDownIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="m6 9 6 6 6-6" />

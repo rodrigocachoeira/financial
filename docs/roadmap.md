@@ -11,8 +11,8 @@ Cada fase termina em algo verificável. Uma fase só começa com a spec escrita 
 | 4 | Tela de upload e lista de transações | importar as fixtures pela interface | feita |
 | 5 | Categorização por regras e correção manual que vira regra | testes das regras; correção reflete na importação seguinte | feita |
 | 6 | Relatórios: por categoria, mês a mês, estabelecimentos, recorrentes, parcelas futuras | testes dos cálculos com dados conhecidos | feita |
-| 7 | Dicas geradas por IA com dados agregados | spec define o que é enviado ao serviço | próxima |
-| 8 | PWA | instalar no iPhone pela tela de início | |
+| 7 | Dicas geradas por IA com dados agregados | spec define o que é enviado ao serviço | feita (texto para colar no Claude; API paga adiada) |
+| 8 | PWA | instalar no iPhone pela tela de início | próxima |
 
 ## Melhorias fora das fases
 

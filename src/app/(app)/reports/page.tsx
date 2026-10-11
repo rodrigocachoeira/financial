@@ -4,6 +4,8 @@ import { Suspense, type ReactNode } from "react";
 import { ArrowDownLeftIcon, ArrowUpRightIcon, SwapIcon, UploadIcon } from "@/components/icons";
 import { badge, buttonPrimary, card, skeleton } from "@/components/ui";
 import { formatCents, formatMonth, formatPercent, parseMonth } from "@/lib/format";
+import { buildInsightsPayload } from "@/lib/insights/payload";
+import { buildInsightsPrompt } from "@/lib/insights/prompt";
 import { addMonths } from "@/lib/reports/months";
 import {
   futureInstallments,
@@ -25,6 +27,7 @@ import { getDb } from "@/server/db";
 import { loadReportRows } from "@/server/reports/load-report-rows";
 import { listMonths } from "@/server/transactions/list-transactions";
 import { EvolutionChart } from "./evolution-chart";
+import { InsightsCard } from "./insights-card";
 import { MonthSelect } from "./month-select";
 
 export const metadata: Metadata = { title: "Relatórios | Financial" };
@@ -305,6 +308,13 @@ async function Reports({ searchParams }: Pick<PageProps<"/reports">, "searchPara
         />
         <Tile label="Saldo" cents={summary.netCents} tone="bg-accent-soft text-accent" icon={<SwapIcon />} />
       </dl>
+
+      <InsightsCard
+        // Remounting per month clears the "copied" state when the month changes.
+        key={month}
+        prompt={summary.spentCents > 0 ? buildInsightsPrompt(buildInsightsPayload(rows, month)) : null}
+        monthName={monthName}
+      />
 
       <Section title="Gasto por categoria" description={`Para onde foi o dinheiro em ${monthName}.`}>
         <CategoryBars categories={spendingByCategory(rows, month)} month={month} />

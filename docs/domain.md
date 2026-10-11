@@ -73,4 +73,5 @@ Glossário e regras de negócio. Termos em inglês são os nomes usados no códi
 
 ## Privacidade
 
-- Descrições de Pix contêm nome, CPF/CNPJ e dados bancários de terceiros. Esses dados não vão para logs, mensagens de erro nem para o serviço de IA.
+- Descrições de Pix contêm nome, CPF/CNPJ e dados bancários de terceiros. Esses dados não vão para logs, mensagens de erro nem para o texto das dicas com IA.
+- O texto das dicas com IA só contém agregados. Estabelecimentos são citados pelo nome apenas quando vêm de compra no cartão ou no débito; contrapartes de Pix nunca.

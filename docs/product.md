@@ -33,7 +33,8 @@ Uma única pessoa (o autor). Há login porque os dados ficam na nuvem, mas não 
 ### Dicas
 
 - Geradas por IA a partir dos gastos do usuário.
-- Enviar ao serviço de IA apenas dados agregados (totais por categoria, variações, recorrências), nunca o arquivo bruto nem dados de identificação. *Premissa proposta, a confirmar.*
+- O aplicativo não envia nada a terceiros: prepara um texto com dados agregados (totais por categoria, variações, recorrências, parcelas) que o usuário copia e cola no Claude com a própria conta.
+- Nunca entram o arquivo bruto, descrições, nomes de pessoas ou documentos.
 
 ## Fora do escopo por enquanto
 
